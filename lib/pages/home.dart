@@ -158,7 +158,19 @@ class HomePageState extends State<HomePage>{
                     onTap: () {
                       _scaffoldKey.currentState.hideCurrentSnackBar();
                       _scaffoldKey.currentState.showSnackBar(SnackBar(
-                        content: Text(tree['name']),
+                        content: 
+                          Row(
+                            children: <Widget>[
+                              Text(tree['name']),
+                              SizedBox(width: 15),
+                              RaisedButton(
+                                child: Text("Детально"),
+                                color: Colors.grey,
+                                onPressed: () {}
+                              )
+                            ],
+                          )
+                          
                       ));
                     },
                     child:

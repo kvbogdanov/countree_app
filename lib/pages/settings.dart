@@ -120,10 +120,52 @@ class SettingsPageState extends State<SettingsPage>{
                       },
                       valueListenable: _activeMapName
                     ),
+                    SizedBox(height: 15),
+                    FormBuilderSwitch(
+                      attribute: "savepos",
+                      label: Text("Сохранять позицию и масштаб", style: TextStyle(color: Colors.black87, fontSize: 16))
+                    ),
+                    FormBuilderSwitch(
+                      attribute: "animationon",
+                      label: Text("Анимированные кластеры", style: TextStyle(color: Colors.black87, fontSize: 16))
+                    ),
+                    FormBuilderSwitch(
+                      attribute: "clearcache",
+                      label: Text("Очистить кэш деревьев", style: TextStyle(color: Colors.black87, fontSize: 16)),
+                      onChanged: (val) {
+                        if(val)
+                          return showDialog<void>(
+                            context: context,
+                            barrierDismissible: false, // user must tap button!
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text('Внимание'),
+                                content: SingleChildScrollView(
+                                  child: ListBody(
+                                    children: <Widget>[
+                                      Text('Удаление кэша данных может привести к длительной загрзузке данных при следующем запуске.'),
+                                    ],
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    child: Text('Понятно'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        else
+                          return false;                      
+                      },
+                    ),
                   ],
                 ),
             ),
-            SizedBox(height: 15),
+
             /*
             Row(  
               mainAxisAlignment: MainAxisAlignment.center,                         

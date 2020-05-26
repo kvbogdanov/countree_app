@@ -137,11 +137,23 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
         title: Text('Countree'),
         actions: <Widget>[
            new IconButton(
-             icon: new Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pop("/"),
+             icon: new Icon(Icons.save_alt),
+            onPressed: () async {
+                setState(() => _isLoading = true);
+                var res = await _loginUser(
+                    _emailController.text, _passwordController.text);
+                setState(() => _isLoading = false);
+                
+                JsonUser user = JsonUser.fromJson(jsonDecode(res));
+
+                if (user is JsonUser) {
+                  _setLoggedState();
+                  Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
+                }
+              },
            ),
          ],
-        leading: new Container(),        
+        //leading: new Container(),        
       ),
       body: Center(
         child: _isLoading
@@ -166,6 +178,7 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
                       ),
                     ),
                   ),
+                  /*
                   RaisedButton(
                     child: Text("Войти"),
                     color: countreeTheme.shade400,
@@ -184,6 +197,7 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
                       }
                     },
                   ),
+                  */
                 ],
               ),
       ),

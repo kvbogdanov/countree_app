@@ -138,12 +138,11 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
         actions: <Widget>[
            new IconButton(
              icon: new Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pushReplacementNamed("/"),
+            onPressed: () => Navigator.of(context).pop("/"),
            ),
          ],
         leading: new Container(),        
       ),
-      //endDrawer: buildDrawer(context, LoginPage.route),
       body: Center(
         child: _isLoading
             ? CircularProgressIndicator()
@@ -180,15 +179,7 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
 
                       if (user is JsonUser) {
                         _setLoggedState();
-                        Navigator.of(context).pushNamed("/");
-                        /*                        
-                        Navigator.of(context).push(MaterialPageRoute<Null>(
-                            builder: (BuildContext context) {
-                          return new LoginPage(
-                            user: user,
-                          );
-                        }));
-                        */
+                        Navigator.of(context).pushReplacementNamed("/");
                       }
                     },
                   ),

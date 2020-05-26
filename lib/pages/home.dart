@@ -4,16 +4,20 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong/latlong.dart';
-import 'zoombuttons_plugin_option.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:countree/widgets/drawer.dart';
 import 'package:countree/data/cities.dart';
 import 'package:countree/data/colors.dart';
-
+import 'package:countree/pages/treeform.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:proj4dart/proj4dart.dart' as proj4;
+
+const MAXZOOM = 20.0;
+
+var uuid = Uuid(); 
 
 class HomePage extends StatefulWidget {
   static const String route = '/';
@@ -178,11 +182,27 @@ class HomePageState extends State<HomePage>{
   bool signed = false;
   List<Marker> markers = <Marker>[];
   double zoomLevel = 16.0;
+  int maxClusterRadius = 100;
   int totalTrees = 0;
+  List<LayerOptions> mainLayers = [
+        TileLayerOptions(
+          urlTemplate:
+              'http://tiles.maps.sputnik.ru/{z}/{x}/{y}.png',
+          additionalOptions: {
+            'accessToken': 'pk.eyJ1Ijoia29zeWFnIiwiYSI6ImNrYWp6OWdnOTBmb3kycW1pemU1NTE3a3UifQ.IJglSz8JQcOYKfkntYdCwA',
+            'id': 'mapbox/streets-v11',
+          },    
+          subdomains: ['a', 'b', 'c'],
+        ),
+    ];
+  LayerOptions clusteredLO;
+  LayerOptions nonClusteredLO;
+
 
   @override
   void initState() {
     super.initState();
+
     mapController = MapController();
     currentCity = CountreeCities.cities[0];
     _getCurrentCity().then((result){
@@ -191,11 +211,35 @@ class HomePageState extends State<HomePage>{
           mapController.move(currentCity.center, 16.0); 
           dropdownValue = currentCity.name;
 
-          _loadPoints(currentCity.uri).then((result){
-            setState(() {
-              totalTrees = markers.length;
+          if(markers.length == 0)
+            _loadPoints(currentCity.uri).then((result){
+              setState(() {
+                totalTrees = markers.length;                  
+                clusteredLO = MarkerClusterLayerOptions(
+                    maxClusterRadius: 100,
+                    animationsOptions: AnimationsOptions(zoom: const Duration(milliseconds: 0), fitBound: const Duration(milliseconds: 500), centerMarker: const Duration(milliseconds: 500), spiderfy: const Duration(milliseconds: 500), centerMarkerCurves: Curves.fastOutSlowIn),
+                    zoomToBoundsOnClick: true,
+                    size: Size(60, 60),
+                    fitBoundsOptions: FitBoundsOptions(
+                      padding: EdgeInsets.all(50),
+                    ),
+                    markers: markers,
+                    polygonOptions: PolygonOptions(
+                        borderColor: countreeTheme.shade400,
+                        color: Colors.black12,
+                        borderStrokeWidth: 3),
+                    builder: (context, markers) {
+                      return FloatingActionButton(
+                        heroTag: uuid.v1(),
+                        child: Text(markers.length.toString()),
+                        onPressed: null,
+                      );
+                    },
+                  );
+                nonClusteredLO = MarkerLayerOptions(markers: markers);
+                mainLayers.add(clusteredLO);
+              });
             });
-          });
         });
     });
     dropdownValue = currentCity.name;
@@ -209,8 +253,7 @@ class HomePageState extends State<HomePage>{
 
   @override
   Widget build(BuildContext context) {
-    
-
+  
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(title: Text('Countree')),
@@ -275,7 +318,13 @@ class HomePageState extends State<HomePage>{
                                 if(mapController.zoom > 5)
                                   mapController.move(mapController.center, mapController.zoom-1);
                                 setState(() { 
+                                  var prevZl = zoomLevel.round();
                                   zoomLevel =  mapController.zoom;
+                                  if(zoomLevel.round()==17 && prevZl>zoomLevel)
+                                  {
+                                    mainLayers.removeLast();
+                                    mainLayers.add(clusteredLO);
+                                  }
                                 });
                               },
                               child: ClipOval(
@@ -283,7 +332,7 @@ class HomePageState extends State<HomePage>{
                                   color: countreeTheme.shade400,
                                   height: 40.0, 
                                   width: 40.0,
-                                  child: Center(child: Text('-', style: TextStyle(color: Colors.white, fontSize: 20),)),
+                                  child: Icon(Icons.remove) //Center(child: Text('-', style: TextStyle(color: Colors.white, fontSize: 20),)),
                                 ),
                               ),
                             ),
@@ -297,10 +346,16 @@ class HomePageState extends State<HomePage>{
                             ),
                             GestureDetector(
                               onTap: () {
-                                if(mapController.zoom < 22)
+                                if(mapController.zoom < MAXZOOM)
                                   mapController.move(mapController.center, mapController.zoom+1);
                                 setState(() { 
+                                  var prevZl = zoomLevel.round();
                                   zoomLevel =  mapController.zoom;
+                                  if(zoomLevel.round()==18 && prevZl<zoomLevel)
+                                  {
+                                    mainLayers.removeLast();
+                                    mainLayers.add(nonClusteredLO);
+                                  }
                                 });
                               },
                               child: ClipOval(
@@ -308,7 +363,7 @@ class HomePageState extends State<HomePage>{
                                   color: countreeTheme.shade400,
                                   height: 40.0, 
                                   width: 40.0,
-                                  child: Center(child: Text('+', style: TextStyle(color: Colors.white, fontSize: 20),)),
+                                  child: Icon(Icons.add) //Center(child: Text('+', style: TextStyle(color: Colors.white, fontSize: 20),)),
                                 ),
                               ),
                             ), 
@@ -325,17 +380,47 @@ class HomePageState extends State<HomePage>{
                 options: MapOptions(
                   center: currentCity.center, //LatLng(56.01115, 92.85290),
                   zoom: 16.0,
-                  maxZoom: 22.0,
+                  maxZoom: MAXZOOM,
+                  onTap: (point) {
+                    print('tap');
+                    setState((){
+                      zoomLevel =  mapController.zoom;
+                    });
+                  },
+                  onPositionChanged: (p1, p2) {
+                    /*
+                    if(markers.length>0)
+                      setState((){
+                        var prevZl = zoomLevel.round();
+                        zoomLevel = mapController.zoom;
+
+                        if(zoomLevel.round()==18 && prevZl<zoomLevel)
+                        {
+                          mainLayers.removeLast();
+                          mainLayers.add(nonClusteredLO);
+                        }
+                        else if(zoomLevel.round()==18 && prevZl>zoomLevel)
+                        {
+                          mainLayers.removeLast();
+                          mainLayers.add(clusteredLO);
+                        }                                         
+                      });
+                    print(mapController.zoom);
+                    */
+                  },
                   plugins: [
-                    ZoomButtonsPlugin(),
+                    //ZoomButtonsPlugin(),
                     MarkerClusterPlugin(),
                   ],                  
                 ),
-                layers: [
+                layers: mainLayers,
+                
+                /*
+                [
                   TileLayerOptions(
                     urlTemplate:
-                        //'http://tiles.maps.sputnik.ru/{z}/{x}/{y}.png',
-                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'http://tiles.maps.sputnik.ru/{z}/{x}/{y}.png',
+                        //'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                         //"https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia29zeWFnIiwiYSI6ImNrYWp6OWdnOTBmb3kycW1pemU1NTE3a3UifQ.IJglSz8JQcOYKfkntYdCwA",
                         //-"https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token=pk.eyJ1Ijoia29zeWFnIiwiYSI6ImNrYWp6OWdnOTBmb3kycW1pemU1NTE3a3UifQ.IJglSz8JQcOYKfkntYdCwA",
                     additionalOptions: {
@@ -344,7 +429,13 @@ class HomePageState extends State<HomePage>{
                     },    
                     subdomains: ['a', 'b', 'c'],
                     //tileProvider: NonCachingNetworkTileProvider(),
+                  ),
+                  /*
+                  TileLayerOptions(
+                    urlTemplate:'http://vec{s}.maps.yandex.net/tiles?l=map&v=4.55.2&z={z}&x={x}&y={y}&scale=2&lang=ru_RU',
+                    subdomains: ['01', '02', '03', '04'],
                   ),                  
+                       
                   TileLayerOptions(
                     urlTemplate:
                         //'http://tiles.maps.sputnik.ru/{z}/{x}/{y}.png',
@@ -360,9 +451,9 @@ class HomePageState extends State<HomePage>{
                     //subdomains: ['a', 'b', 'c'],
                     //tileProvider: NonCachingNetworkTileProvider(),
                   ),
-                  
+                  */
                   MarkerClusterLayerOptions(
-                    maxClusterRadius: 100,
+                    maxClusterRadius: 0,
                     animationsOptions: AnimationsOptions(zoom: const Duration(milliseconds: 0), fitBound: const Duration(milliseconds: 500), centerMarker: const Duration(milliseconds: 500), spiderfy: const Duration(milliseconds: 500), centerMarkerCurves: Curves.fastOutSlowIn),
                     zoomToBoundsOnClick: true,
                     size: Size(60, 60),
@@ -376,6 +467,7 @@ class HomePageState extends State<HomePage>{
                         borderStrokeWidth: 3),
                     builder: (context, markers) {
                       return FloatingActionButton(
+                        heroTag: uuid.v1(),
                         child: Text(markers.length.toString()),
                         onPressed: null,
                       );
@@ -383,20 +475,22 @@ class HomePageState extends State<HomePage>{
                   ),
                              
                   //MarkerLayerOptions(markers: markers),
-                  /*
-                  ZoomButtonsPluginOption(
-                      minZoom: 4,
-                      maxZoom: 30,
-                      mini: true,
-                      padding: 10,
-                      alignment: Alignment.bottomLeft),
-                  */
-                ],
+                ],*/
               ),
             ),
           ],
         ),
       ),
+      floatingActionButton: 
+        signed?
+          FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, TreeformPage.route);
+          },
+          child: Icon(Icons.add),
+          backgroundColor: Colors.deepOrangeAccent ,
+        ):null
+         
     );  
 
 

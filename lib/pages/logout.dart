@@ -30,7 +30,7 @@ class LogoutPageState extends State<LogoutPage>{
     _setLoggedState().then((result){
         setState(() {
           signed = false;
-          Navigator.of(context).pushReplacementNamed("/");
+          Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
         });
     });
   }

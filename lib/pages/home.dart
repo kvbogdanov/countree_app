@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
@@ -8,12 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:countree/widgets/drawer.dart';
 import 'package:countree/data/cities.dart';
 import 'package:countree/data/colors.dart';
+import 'package:countree/data/maps.dart';
 import 'package:countree/pages/treeform.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:proj4dart/proj4dart.dart' as proj4;
+//import 'package:proj4dart/proj4dart.dart' as proj4;
+import 'package:progress_indicators/progress_indicators.dart';
 
 const MAXZOOM = 20.0;
 
@@ -42,6 +44,28 @@ class HomePageState extends State<HomePage>{
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return (prefs.getBool('logged') ?? false);
   }  
+
+  _getMapLayer() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    var newMapLayerName = prefs.getString('mapsrc');
+
+    if(newMapLayerName != '' && newMapLayerName != mapSourcesNames[0])
+    {
+      // antipattern! to remove
+      switch (newMapLayerName) {
+        case "Mapbox (карта)": mainLayers[0] = mapSources[1]; break;
+        case "Mapbox (спутниковый снимок)": mainLayers[0] = mapSources[2]; break;
+        case "OSM": mainLayers[0] = mapSources[3]; break;
+        case "Яндекс (тест)": mainLayers[0] = mapSources[4]; break;
+        default: mainLayers[0] = mapSources[0];
+      }
+
+      return true;
+    }
+
+    return false;
+  }    
 
   _setCurrentCity(String cityname) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -185,15 +209,7 @@ class HomePageState extends State<HomePage>{
   int maxClusterRadius = 100;
   int totalTrees = 0;
   List<LayerOptions> mainLayers = [
-        TileLayerOptions(
-          urlTemplate:
-              'http://tiles.maps.sputnik.ru/{z}/{x}/{y}.png',
-          additionalOptions: {
-            'accessToken': 'pk.eyJ1Ijoia29zeWFnIiwiYSI6ImNrYWp6OWdnOTBmb3kycW1pemU1NTE3a3UifQ.IJglSz8JQcOYKfkntYdCwA',
-            'id': 'mapbox/streets-v11',
-          },    
-          subdomains: ['a', 'b', 'c'],
-        ),
+        mapSources[0]
     ];
   LayerOptions clusteredLO;
   LayerOptions nonClusteredLO;
@@ -249,6 +265,10 @@ class HomePageState extends State<HomePage>{
           signed = result;
         });
     });
+
+    _getMapLayer().then((result){
+        setState(() {});
+    });
   }
 
   @override
@@ -300,6 +320,7 @@ class HomePageState extends State<HomePage>{
                     child: Padding(
                         padding: EdgeInsets.only(left: 10, right: 10),
                         child:
+                          (totalTrees==0)? Container( width: 40, height: 40, child:  JumpingDotsProgressIndicator(fontSize: 20.0)) :
                           Text(
                             '(' + totalTrees.toString() + ')',
                             style: TextStyle(fontSize: 10),

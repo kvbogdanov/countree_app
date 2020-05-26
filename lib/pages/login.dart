@@ -179,7 +179,8 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
 
                       if (user is JsonUser) {
                         _setLoggedState();
-                        Navigator.of(context).pushReplacementNamed("/");
+                        //Navigator.of(context).pushReplacementNamed("/");
+                        Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
                       }
                     },
                   ),

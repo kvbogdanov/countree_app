@@ -10,20 +10,47 @@ import 'package:countree/pages/about.dart';
 const double MENUSIZE = 20;
 
 Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = false, Function setState}) {
+  precacheImage(AssetImage("assets/images/countree_logo.png"), context);
   return Drawer(
     child: ListView(
       children: <Widget>[
-        const DrawerHeader(
-          child: Center(
-            child: Text(''),
-          ),
+        (!signed)?
+          const DrawerHeader(
+            child: Center(
+              child: Text(''),
+            ),
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/countree_logo.png'),
+                fit: BoxFit.contain
+              )
+            ),
+          )
+        :
+        UserAccountsDrawerHeader(
+          accountName: Text("Иван Иванов"),
+          accountEmail: Text("ivanov1991@gmail.com"),
           decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/mainlogo.png'),
-              fit: BoxFit.contain
-            )
+            color: null
           ),
-        ),
+          currentAccountPicture: 
+            CircleAvatar(
+              backgroundColor: countreeTheme.shade400,
+              child: Text(
+                "ИИ",
+                style: TextStyle(fontSize: 40.0, color: Colors.white),
+              ),
+            ),
+          otherAccountsPictures: <Widget> [
+            CircleAvatar(
+              backgroundColor: countreeTheme.shade100,
+              child: Text(
+                "23",
+                style: TextStyle(fontSize: 12.0, color: countreeTheme.shade800),
+              ),
+            ),
+          ]
+        ) ,
         ListTile(
           title: const Text('Карта', style: TextStyle(fontSize: MENUSIZE)),
           selected: currentRoute == HomePage.route,

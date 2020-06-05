@@ -16,6 +16,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 //import 'package:proj4dart/proj4dart.dart' as proj4;
 import 'package:progress_indicators/progress_indicators.dart';
+import 'package:countree/pages/view.dart';
 
 const MAXZOOM = 20.0;
 
@@ -166,7 +167,13 @@ class HomePageState extends State<HomePage>{
                               RaisedButton(
                                 child: Text("Детально"),
                                 color: Colors.grey,
-                                onPressed: () {}
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    ViewPage.route,
+                                    arguments: tree['id']??0,
+                                  );                                  
+                                }
                               )
                             ],
                           )

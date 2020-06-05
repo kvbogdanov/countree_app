@@ -30,6 +30,7 @@ class TreeformPageState extends State<TreeformPage>{
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   bool signed = false;
   bool visRegular = true;
+  bool visSeedling = true;
 
   _getCurrentCity() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -46,20 +47,36 @@ class TreeformPageState extends State<TreeformPage>{
   Location location = new Location();
   MapController mapController;
   CountreeCity currentCity;
+  LatLng currentPoint;
 
   bool _serviceEnabled;
   PermissionStatus _permissionGranted;
   LocationData _locationData;
-  double zoomLevel = 16.0;
+  double zoomLevel = 18.0;
 
   List<Marker> markers = <Marker>[];
   int maxClusterRadius = 100;
   int totalTrees = 0;
   List<LayerOptions> mainLayers = [
-        mapSources[0]
+        mapSources[0],
     ];
   LayerOptions clusteredLO;
   LayerOptions nonClusteredLO;
+
+  Map<String, bool> notSure = {
+    'treetype' : false,
+    'isalive': false,
+    'isseedling' : false,
+    'diameter' : false,
+    'multibarrel' : false,
+    'state' : false,
+    'firstthread' : false,
+    'condition' : false,
+    'neighbours' : false,
+    'surroundings' : false,
+    'overall' : false,
+    'height' : false,
+  };
 
   _getCurrentLocation() async {
     _serviceEnabled = await location.serviceEnabled();
@@ -80,11 +97,17 @@ class TreeformPageState extends State<TreeformPage>{
 
     _locationData = await location.getLocation();   
 
-    print(_locationData.latitude.toString() + ' ' + _locationData.longitude.toString());
+    //print(_locationData.latitude.toString() + ' ' + _locationData.longitude.toString());
 
     return new LatLng(56.003313,92.8486668);
 
     //return new LatLng(_locationData.latitude, _locationData.longitude); 
+  }
+
+  void _handleTap(LatLng latlng) {
+    setState(() {
+      currentPoint = latlng;
+    });
   }
 
   @override
@@ -102,12 +125,14 @@ class TreeformPageState extends State<TreeformPage>{
     _getCurrentCity().then((result){
         setState(() {
           currentCity = result;
-          mapController.move(currentCity.center, 16.0);     
+          mapController.move(currentCity.center, 18.0);     
         });
     });
     
     _getCurrentLocation().then((result){
       mapController.move(result, zoomLevel);
+      currentPoint = result;
+      _handleTap(currentPoint);
     });
 
   }
@@ -134,6 +159,23 @@ class TreeformPageState extends State<TreeformPage>{
 
   @override
   Widget build(BuildContext context) {
+    var markers = [currentPoint].map((latlng) {
+      return Marker(
+        width: 50.0,
+        height: 50.0,
+        point: latlng,
+        builder: (ctx) => Container(
+          child: Icon(Icons.filter_tilt_shift, color: Colors.red, size: 50), // FlutterLogo(),
+        ),
+      );
+    }).toList();
+
+    if(mainLayers.length > 1)
+      mainLayers.removeLast();
+
+    mainLayers.add(MarkerLayerOptions(markers: markers));
+      
+
     return new WillPopScope(
       onWillPop: _onWillPop,
       child: 
@@ -152,16 +194,17 @@ class TreeformPageState extends State<TreeformPage>{
                         mapController: mapController,
                         options: MapOptions(
                           center: currentCity.center, //LatLng(56.01115, 92.85290),
-                          zoom: 16.0,
+                          zoom: 18.0,
                           maxZoom: MAXZOOM,
                           onTap: (point) {
-                            print('tap');
+                            //print('tap');
+                            _handleTap(point);
                             setState((){
                               zoomLevel =  mapController.zoom;
                             });
                           },
                           onPositionChanged: (p1, p2) {
-                            print(p1.center.toString());
+                            //print(p1.center.toString());
                             //print(p2);
                           }
                         ),
@@ -189,7 +232,24 @@ class TreeformPageState extends State<TreeformPage>{
                                               Padding(
                                                 padding: EdgeInsets.all(15.0),
                                                 child:
-                                                  Text('Биологический вид', style: TextStyle(fontSize: 20))
+                                                  Row(
+                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    children: <Widget>[
+                                                        Text('Биологический вид', style: TextStyle(fontSize: 20)),
+                                                        Tooltip(
+                                                          message: 'Не уверен',
+                                                          child:
+                                                            Checkbox(
+                                                              value: notSure['treetype'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['treetype'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            )
+                                                        )
+                                                    ],
+                                                  )
                                               )
                                           )
                                         )
@@ -202,7 +262,11 @@ class TreeformPageState extends State<TreeformPage>{
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(18.0),
                                             side: BorderSide(color: countreeTheme.shade800)),
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            setState(() {
+                                               _fbKey.currentState.fields['treetype'].currentState.didChange(TreeTypeList.getById(10).name);
+                                            });
+                                          },
                                           color: countreeTheme.shade400,
                                           textColor: Colors.white,
                                           child: Text(TreeTypeList.getById(10).name.toUpperCase(),
@@ -213,27 +277,36 @@ class TreeformPageState extends State<TreeformPage>{
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(18.0),
                                             side: BorderSide(color: countreeTheme.shade800)),
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            setState(() {
+                                               _fbKey.currentState.fields['treetype'].currentState.didChange(TreeTypeList.getById(1).name);
+                                            });
+                                          },
                                           color: countreeTheme.shade400,
                                           textColor: Colors.white,
                                           child: Text(TreeTypeList.getById(1).name.toUpperCase(),
                                             style: TextStyle(fontSize: 12)),
                                         ),
-                                        /*
-                                        SizedBox(width: 10),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: <Widget>[
                                         RaisedButton(
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(18.0),
-                                            side: BorderSide(color: Colors.red)),
-                                          onPressed: () {},
-                                          color: Colors.red,
+                                            side: BorderSide(color: countreeTheme.shade800)),
+                                          onPressed: () {
+                                            setState(() {
+                                               _fbKey.currentState.fields['treetype'].currentState.didChange(TreeTypeList.getById(17).name);
+                                            });
+                                          },
+                                          color: countreeTheme.shade400,
                                           textColor: Colors.white,
                                           child: Text(TreeTypeList.getById(17).name.toUpperCase(),
-                                            style: TextStyle(fontSize: 10)),
+                                            style: TextStyle(fontSize: 12)),
                                         ),
-                                        */
                                       ],
-                                    ),
+                                    ),                                    
                                     FormBuilderDropdown(
                                       attribute: "treetype",
                                       initialValue: TreeTypeList.types[0].name,
@@ -243,12 +316,8 @@ class TreeformPageState extends State<TreeformPage>{
                                           child: Text(ttype)
                                       )).toList(),
                                     ),
-                                    FormBuilderSwitch(
-                                      attribute: "treetype_notsure",
-                                      label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                    ), 
                                     SizedBox(height: 25),
-    // Сухое дерево'                                
+    // Сухое дерево                                
                                     Row(
                                       children: <Widget>[
                                         Expanded(
@@ -260,6 +329,7 @@ class TreeformPageState extends State<TreeformPage>{
                                                 padding: EdgeInsets.all(15.0),
                                                 child:
                                                   Row(
+                                                    //mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                     children: <Widget>[
                                                       Text('Сухое дерево', style: TextStyle(fontSize: 20)),
                                                       GestureDetector(
@@ -291,9 +361,17 @@ class TreeformPageState extends State<TreeformPage>{
                                                         },
                                                         child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                       ),
+                                                      Spacer(),
+                                                      Checkbox(
+                                                        value: notSure['isalive'],
+                                                        activeColor: Colors.red,
+                                                        onChanged: (val) {
+                                                          notSure['isalive'] = val;
+                                                          setState(() {});
+                                                        }
+                                                      )
                                                     ],
                                                   )
-                                                  
                                               )
                                           )
                                         )
@@ -302,14 +380,16 @@ class TreeformPageState extends State<TreeformPage>{
                                     FormBuilderSwitch(
                                       attribute: "isalive",
                                       label: Text("Сухое дерево ", style: TextStyle(color: Colors.black87, fontSize: 16)),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          visRegular = !value;
+                                          visSeedling = !value;
+                                        });
+                                      },
                                     ), 
-                                    FormBuilderSwitch(
-                                      attribute: "isalive_notsure",
-                                      label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                    ),
     // Малое насаждение                                
                                     Visibility(
-                                      visible: visRegular,
+                                      visible: visSeedling,
                                       child: Column(
                                         children: <Widget>[
                                           SizedBox(height: 25),
@@ -355,6 +435,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                               },
                                                               child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                             ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['isseedling'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['isseedling'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            )
                                                           ],
                                                         )
                                                     )
@@ -364,12 +453,13 @@ class TreeformPageState extends State<TreeformPage>{
                                           ), 
                                           FormBuilderSwitch(
                                             attribute: "isseedling",
-                                            label: Text("Малое насаждение", style: TextStyle(color: Colors.black87, fontSize: 16))
+                                            label: Text("Малое насаждение", style: TextStyle(color: Colors.black87, fontSize: 16)),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                visRegular = !value;
+                                              });
+                                            },                                            
                                           ),
-                                          FormBuilderSwitch(
-                                            attribute: "isseedling_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                          ),                                      
                                         ]
                                       )
                                     ),
@@ -422,6 +512,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                                 },
                                                                 child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                               ),
+                                                              Spacer(),
+                                                              Checkbox(
+                                                                value: notSure['diameter'],
+                                                                activeColor: Colors.red,
+                                                                onChanged: (val) {
+                                                                  notSure['diameter'] = val;
+                                                                  setState(() {});
+                                                                }
+                                                              )
                                                             ],
                                                           )
                                                       )
@@ -429,16 +528,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                 )
                                               ]
                                             ),
-                                            FormBuilderTouchSpin(
-                                              decoration: InputDecoration(labelText: ""),
+                                            FormBuilderTextField(
                                               attribute: "diameter",
-                                              initialValue: 10,
-                                              step: 1,
+                                              keyboardType: TextInputType.number,
+                                              initialValue: '10',
+                                              validators: [
+                                                FormBuilderValidators.numeric(),
+                                                FormBuilderValidators.max(1000),
+                                              ],
                                             ),
-                                            FormBuilderSwitch(
-                                              attribute: "diameter_notsure",
-                                              label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                            ),                                      
                                           ]
                                         )
                                     ),
@@ -490,6 +588,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                               },
                                                               child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                             ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['multibarrel'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['multibarrel'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            )
                                                           ],
                                                         )
                                                     )
@@ -500,10 +607,6 @@ class TreeformPageState extends State<TreeformPage>{
                                           FormBuilderSwitch(
                                             attribute: "multibarrel",
                                             label: Text("Многоствольное", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                          ),
-                                          FormBuilderSwitch(
-                                            attribute: "multibarrel_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
                                           ),
                                         ]
                                       )
@@ -563,6 +666,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                               },
                                                               child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                             ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['state'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['state'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            )
                                                           ],
                                                         )
                                                     )
@@ -587,10 +699,6 @@ class TreeformPageState extends State<TreeformPage>{
                                               ),
                                             ],
                                           ),
-                                          FormBuilderSwitch(
-                                            attribute: "state_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                          ),
                                         ]
                                       )
                                     ),
@@ -612,7 +720,7 @@ class TreeformPageState extends State<TreeformPage>{
                                                       child:
                                                         Row(
                                                           children: <Widget>[
-                                                            Text('Высота первой ветви', style: TextStyle(fontSize: 20)),
+                                                            Text('Крона начинается на высоте', style: TextStyle(fontSize: 16)),
                                                             GestureDetector(
                                                               onTap: () {
                                                                 return showDialog<void>(
@@ -642,6 +750,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                               },
                                                               child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                             ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['firstthread'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['firstthread'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            )
                                                           ],
                                                         )
                                                     )
@@ -699,10 +816,6 @@ class TreeformPageState extends State<TreeformPage>{
                                               ),
                                             ],
                                           ),
-                                          FormBuilderSwitch(
-                                            attribute: "firstbarrel_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                          ),
                                         ]
                                       )
                                     ),
@@ -754,6 +867,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                               },
                                                               child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                             ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['condition'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['condition'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            )
                                                           ],
                                                         )
                                                     )
@@ -783,107 +905,10 @@ class TreeformPageState extends State<TreeformPage>{
                                               ),
                                             ],
                                           ),
-                                          FormBuilderSwitch(
-                                            attribute: "condition_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                          ),
                                         ]
                                       )
                                     ),
-    // интегральное состоение дерева
-                                    Visibility(
-                                      visible: visRegular,
-                                      child: Column(
-                                        children: <Widget>[
-                                          SizedBox(height: 25),
-                                          Row(
-                                            children: <Widget>[
-                                              Expanded(
-                                                flex: 10,
-                                                child: Container(
-                                                  color: countreeTheme.shade100,
-                                                  child: 
-                                                    Padding(
-                                                      padding: EdgeInsets.all(15.0),
-                                                      child:
-                                                        Row(
-                                                          children: <Widget>[
-                                                            Text('Интегральное состояние', style: TextStyle(fontSize: 20)),
-                                                            GestureDetector(
-                                                              onTap: () {
-                                                                return showDialog<void>(
-                                                                  context: context,
-                                                                  barrierDismissible: false, // user must tap button!
-                                                                  builder: (BuildContext context) {
-                                                                    return AlertDialog(
-                                                                      //title: Text('Внимание'),
-                                                                      content: SingleChildScrollView(
-                                                                        child: ListBody(
-                                                                          children: <Widget>[
-                                                                            Text('Интегральное состояние дерева - показатель “здоровья” дерева. Хорошее - если дерево выглядит здоровым и не имеет никаких признаков болезней (повреждения коры, наросты, потемневшая листва, сухие ветви, грибы и тд), Удовлетворительное - у дерева есть проблемы, но не угрожающие его жизнеспособности. Неудовлетворительное - существенные повреждения дерева, возможна его гибель из-за повреждений.'),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      actions: <Widget>[
-                                                                        FlatButton(
-                                                                          child: Text('Понятно'),
-                                                                          onPressed: () {
-                                                                            Navigator.of(context).pop();
-                                                                          },
-                                                                        ),
-                                                                      ],
-                                                                    );
-                                                                  },
-                                                                );                                          
-                                                              },
-                                                              child: Icon(Icons.help, color: countreeTheme.shade400,),
-                                                            ),
-                                                          ],
-                                                        )
-                                                    )
-                                                )
-                                              )
-                                            ]
-                                          ), 
-                                          FormBuilderChoiceChip(
-                                            attribute: "overall",
-                                            options: [
-                                              FormBuilderFieldOption(
-                                                child: 
-                                                  Container(
-                                                    margin: EdgeInsets.only(left: 10, right: 10),
-                                                    child:
-                                                      Text("хорошее")
-                                                  ),
-                                                value: 1
-                                              ),
-                                              FormBuilderFieldOption(
-                                                child: 
-                                                  Container(
-                                                    margin: EdgeInsets.only(left: 10, right: 10),
-                                                    child:
-                                                      Text("удовл")
-                                                  ),
-                                                value: 2
-                                              ),
-                                              FormBuilderFieldOption(
-                                                child: 
-                                                  Container(
-                                                    margin: EdgeInsets.only(left: 10, right: 10),
-                                                    child:
-                                                      Text("неудовл", style: TextStyle(color: Colors.red))
-                                                  ),
-                                                value: 3
-                                              ),
-                                            ],
-                                          ),
-                                          FormBuilderSwitch(
-                                            attribute: "overall_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                          ),
-                                        ]
-                                      )
-                                    ),
+
     // условия роста дерева
                                     Visibility(
                                       visible: visRegular,
@@ -932,6 +957,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                               },
                                                               child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                             ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['surroundings'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['surroundings'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            )
                                                           ],
                                                         )
                                                     )
@@ -959,10 +993,6 @@ class TreeformPageState extends State<TreeformPage>{
                                                 value: 3
                                               ),
                                             ],
-                                          ),
-                                          FormBuilderSwitch(
-                                            attribute: "surroundings_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
                                           ),
                                         ]
                                       )
@@ -1015,6 +1045,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                               },
                                                               child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                             ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['neighbours'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['neighbours'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            ) 
                                                           ],
                                                         )
                                                     )
@@ -1044,14 +1083,10 @@ class TreeformPageState extends State<TreeformPage>{
                                               ),
                                             ],
                                           ),
-                                          FormBuilderSwitch(
-                                            attribute: "neighbours_notsure",
-                                            label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                          ),
                                         ]
                                       )
                                     ),
-    // фотографии                                
+    // интегральное состоение дерева (общая оценка)
                                     Visibility(
                                       visible: visRegular,
                                       child: Column(
@@ -1066,6 +1101,105 @@ class TreeformPageState extends State<TreeformPage>{
                                                   child: 
                                                     Padding(
                                                       padding: EdgeInsets.all(15.0),
+                                                      child:
+                                                        Row(
+                                                          children: <Widget>[
+                                                            Text('Общая оценка', style: TextStyle(fontSize: 20)),
+                                                            GestureDetector(
+                                                              onTap: () {
+                                                                return showDialog<void>(
+                                                                  context: context,
+                                                                  barrierDismissible: false, // user must tap button!
+                                                                  builder: (BuildContext context) {
+                                                                    return AlertDialog(
+                                                                      //title: Text('Внимание'),
+                                                                      content: SingleChildScrollView(
+                                                                        child: ListBody(
+                                                                          children: <Widget>[
+                                                                            Text('Общая оценка дерева - показатель “здоровья” дерева. Хорошее - если дерево выглядит здоровым и не имеет никаких признаков болезней (повреждения коры, наросты, потемневшая листва, сухие ветви, грибы и тд), Удовлетворительное - у дерева есть проблемы, но не угрожающие его жизнеспособности. Неудовлетворительное - существенные повреждения дерева, возможна его гибель из-за повреждений.'),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                      actions: <Widget>[
+                                                                        FlatButton(
+                                                                          child: Text('Понятно'),
+                                                                          onPressed: () {
+                                                                            Navigator.of(context).pop();
+                                                                          },
+                                                                        ),
+                                                                      ],
+                                                                    );
+                                                                  },
+                                                                );                                          
+                                                              },
+                                                              child: Icon(Icons.help, color: countreeTheme.shade400,),
+                                                            ),
+                                                            Spacer(),
+                                                            Checkbox(
+                                                              value: notSure['overall'],
+                                                              activeColor: Colors.red,
+                                                              onChanged: (val) {
+                                                                notSure['overall'] = val;
+                                                                setState(() {});
+                                                              }
+                                                            ) 
+                                                          ],
+                                                        )
+                                                    )
+                                                )
+                                              )
+                                            ]
+                                          ), 
+                                          FormBuilderChoiceChip(
+                                            attribute: "overall",
+                                            options: [
+                                              FormBuilderFieldOption(
+                                                child: 
+                                                  Container(
+                                                    margin: EdgeInsets.only(left: 10, right: 10),
+                                                    child:
+                                                      Text("хорошее")
+                                                  ),
+                                                value: 1
+                                              ),
+                                              FormBuilderFieldOption(
+                                                child: 
+                                                  Container(
+                                                    margin: EdgeInsets.only(left: 10, right: 10),
+                                                    child:
+                                                      Text("удовл")
+                                                  ),
+                                                value: 2
+                                              ),
+                                              FormBuilderFieldOption(
+                                                child: 
+                                                  Container(
+                                                    margin: EdgeInsets.only(left: 10, right: 10),
+                                                    child:
+                                                      Text("неудовл", style: TextStyle(color: Colors.red))
+                                                  ),
+                                                value: 3
+                                              ),
+                                            ],
+                                          ),
+                                        ]
+                                      )
+                                    ),                                    
+    // фотографии                                
+                                    Visibility(
+                                      visible: visRegular,
+                                      child: Column(
+                                        children: <Widget>[
+                                          SizedBox(height: 25),
+                                          Row(
+                                            children: <Widget>[
+                                              Expanded(
+                                                flex: 10,
+                                                child: Container(
+                                                  color: countreeTheme.shade100,
+                                                  child: 
+                                                    Padding(
+                                                      padding: EdgeInsets.all(20.0),
                                                       child:
                                                         Row(
                                                           children: <Widget>[
@@ -1122,7 +1256,7 @@ class TreeformPageState extends State<TreeformPage>{
                                                                         content: SingleChildScrollView(
                                                                           child: ListBody(
                                                                             children: <Widget>[
-                                                                              Text('Высоту можно определить или по ориентирам (этаж здания - около 3 метров), или с помощью бумажного прямоугольного треугольника с углами 45 градусов. Для этого поднесите его к глазу так, чтобы катеты были горизонтально и вертикально, а Вы смотрели на гипотенузу. Наведите верхнюю вершину треугольника на вершину дерева и отмерьте расстояние до дерева из этой точке. Добавив Ваш рост, Вы получите примерную высоту дерева.'),
+                                                                              Text('Высоту можно определить или по ориентирам (этаж здания - около 3 метров), или с помощью бумажного прямоугольного треугольника с углами 45 градусов. Для этого поднесите его к глазу так, чтобы катеты были горизонтально и вертикально, а Вы смотрели на гипотенузу. Наведите верхнюю вершину треугольника на вершину дерева и отмерьте расстояние до дерева из этой точке. Добавив Ваш рост, Вы получите примерную высоту дерева.\n'),
                                                                               Image.network("https://24.countree.ru/img/tree-height.jpg"),
                                                                             ],
                                                                           ),
@@ -1141,6 +1275,15 @@ class TreeformPageState extends State<TreeformPage>{
                                                                 },
                                                                 child: Icon(Icons.help, color: countreeTheme.shade400,),
                                                               ),
+                                                              Spacer(),
+                                                              Checkbox(
+                                                                value: notSure['height'],
+                                                                activeColor: Colors.red,
+                                                                onChanged: (val) {
+                                                                  notSure['height'] = val;
+                                                                  setState(() {});
+                                                                }
+                                                              ) 
                                                             ],
                                                           )
                                                       )
@@ -1161,16 +1304,12 @@ class TreeformPageState extends State<TreeformPage>{
                                             */
                                             FormBuilderSlider(
                                               attribute: "height",
-                                              validators: [FormBuilderValidators.min(6)],
+                                              validators: [FormBuilderValidators.min(0.1)],
                                               min: 0.0,
-                                              max: 20.0,
+                                              max: 30.0,
                                               initialValue: 1.0,
                                               divisions: 200,
                                             ),
-                                            FormBuilderSwitch(
-                                              attribute: "height_notsure",
-                                              label: Text("Не уверен", style: TextStyle(color: Colors.black87, fontSize: 16))
-                                            ), 
                                           ]
                                         )
                                     ),
@@ -1191,11 +1330,37 @@ class TreeformPageState extends State<TreeformPage>{
                           flex: 8,
                           child:
                             RaisedButton(
-                              color: Colors.redAccent,
+                              color: Colors.deepOrangeAccent,
                               child: Text("Сохранить и отправить", style: TextStyle(fontSize: 16, color: Colors.white)),
                               onPressed: () {
                                 if (_fbKey.currentState.saveAndValidate()) {
                                   print(_fbKey.currentState.value);
+
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => new AlertDialog(
+                                      title: new Text('Информация о дереве сохранена'),
+                                      content: new Text('Вы можете добавить ещё одно дерево или вернуться к карте'),
+                                      actions: <Widget>[
+                                        new FlatButton(
+                                          child: new Text('На карту', style: TextStyle(fontSize: 20)),
+                                          onPressed: () => {
+                                            Navigator.of(context).pop(true),
+                                            Navigator.of(context).pop(true),
+                                          }
+                                        ),
+                                        new FlatButton(
+                                          child: new Text('Ещё дерево', style: TextStyle(fontSize: 20, color: Colors.red)),
+                                          onPressed: () => {
+                                            Navigator.of(context).pop(true),
+                                            Navigator.of(context).pop(true),
+                                            Navigator.pushNamed(context, TreeformPage.route), //Navigator.pushNamedAndRemoveUntil(context, "treeform", (r) => false),
+                                          }
+                                        ),
+                                      ],
+                                    ),
+                                  );                                
+
                                 }
                               },
                             ),

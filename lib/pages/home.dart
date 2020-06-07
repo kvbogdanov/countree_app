@@ -17,6 +17,7 @@ import 'package:dio/dio.dart';
 //import 'package:proj4dart/proj4dart.dart' as proj4;
 import 'package:progress_indicators/progress_indicators.dart';
 import 'package:countree/pages/view.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 const MAXZOOM = 20.0;
 
@@ -523,13 +524,50 @@ class HomePageState extends State<HomePage>{
       ),
       floatingActionButton: 
         signed?
-          FloatingActionButton(
+        SpeedDial(
+          animatedIcon: AnimatedIcons.add_event,
+          animatedIconTheme: IconThemeData(size: 32),
+          backgroundColor: Colors.deepOrangeAccent,
+          visible: true,
+          curve: Curves.bounceIn,
+          children: [
+                // FAB 1
+                SpeedDialChild(
+                child: Icon(Icons.add),
+                backgroundColor: countreeTheme.shade600 ,
+                onTap: () {  
+                  Navigator.pushNamed(context, TreeformPage.route); 
+                },
+                label: 'Добавить дерево',
+                labelStyle: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                    fontSize: 16.0),
+                labelBackgroundColor: countreeTheme.shade600),
+                // FAB 2
+                SpeedDialChild(
+                child: Icon(Icons.new_releases),
+                backgroundColor: countreeTheme.shade600 ,
+                onTap: () {
+                   Navigator.pushNamed(context, TreeformPage.route);
+                },
+                label: 'Добавить дерево при посадке',
+                labelStyle: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                    fontSize: 16.0),
+                labelBackgroundColor: countreeTheme.shade600 )
+          ],
+        ):null
+
+        /*
+        FloatingActionButton(
           onPressed: () {
             Navigator.pushNamed(context, TreeformPage.route);
           },
           child: Icon(Icons.add),
           backgroundColor: Colors.deepOrangeAccent ,
-        ):null
+        ):null*/
          
     );  
 

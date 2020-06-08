@@ -235,21 +235,27 @@ class TreeformPageState extends State<TreeformPage>{
                                                 padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                 child:
                                                   Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    //mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                     children: <Widget>[
                                                         Text('Биологический вид', style: TextStyle(fontSize: 20)),
+                                                        Spacer(),
                                                         Tooltip(
                                                           message: 'Не уверен',
                                                           child:
-                                                            Checkbox(
-                                                              value: notSure['treetype'],
-                                                              activeColor: Colors.red,
-                                                              onChanged: (val) {
-                                                                notSure['treetype'] = val;
-                                                                setState(() {});
-                                                              }
+                                                            SizedBox(
+                                                              width: 28.0,
+                                                              child: 
+                                                                Checkbox(
+                                                                  value: notSure['treetype'],
+                                                                  activeColor: Colors.red,
+                                                                  onChanged: (val) {
+                                                                    notSure['treetype'] = val;
+                                                                    setState(() {});
+                                                                  }
+                                                                )
                                                             )
-                                                        )
+                                                        ),
+                                                        Text('н/у', style: TextStyle(fontSize: 14)),
                                                     ],
                                                   )
                                               )
@@ -402,15 +408,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                       Tooltip(
                                                         message: 'Не уверен',
                                                         child:
-                                                          Checkbox(
-                                                            value: notSure['isalive'],
-                                                            activeColor: Colors.red,
-                                                            onChanged: (val) {
-                                                              notSure['isalive'] = val;
-                                                              setState(() {});
-                                                            }
+                                                          SizedBox(
+                                                            width: 28.0,
+                                                            child: 
+                                                              Checkbox(
+                                                                value: notSure['isalive'],
+                                                                activeColor: Colors.red,
+                                                                onChanged: (val) {
+                                                                  notSure['isalive'] = val;
+                                                                  setState(() {});
+                                                                }
+                                                              )
                                                           )
-                                                      )
+                                                      ),
+                                                      Text('н/у', style: TextStyle(fontSize: 14)),
                                                     ],
                                                   )
                                               )
@@ -480,15 +491,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                             Tooltip(
                                                               message: 'Не уверен',
                                                               child:
-                                                                Checkbox(
-                                                                  value: notSure['isseedling'],
-                                                                  activeColor: Colors.red,
-                                                                  onChanged: (val) {
-                                                                    notSure['isseedling'] = val;
-                                                                    setState(() {});
-                                                                  }
+                                                                SizedBox(
+                                                                  width: 28.0,
+                                                                  child: 
+                                                                    Checkbox(
+                                                                      value: notSure['isseedling'],
+                                                                      activeColor: Colors.red,
+                                                                      onChanged: (val) {
+                                                                        notSure['isseedling'] = val;
+                                                                        setState(() {});
+                                                                      }
+                                                                    )
                                                                 )
-                                                            )
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -561,15 +577,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                               Tooltip(
                                                                 message: 'Не уверен',
                                                                 child:
-                                                                  Checkbox(
-                                                                    value: notSure['diameter'],
-                                                                    activeColor: Colors.red,
-                                                                    onChanged: (val) {
-                                                                      notSure['diameter'] = val;
-                                                                      setState(() {});
-                                                                    }
+                                                                  SizedBox(
+                                                                    width: 28.0,
+                                                                    child: 
+                                                                      Checkbox(
+                                                                        value: notSure['diameter'],
+                                                                        activeColor: Colors.red,
+                                                                        onChanged: (val) {
+                                                                          notSure['diameter'] = val;
+                                                                          setState(() {});
+                                                                        }
+                                                                      )
                                                                   )
-                                                              )
+                                                              ),
+                                                              Text('н/у', style: TextStyle(fontSize: 14)),
                                                             ],
                                                           )
                                                       )
@@ -641,15 +662,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                             Tooltip(
                                                               message: 'Не уверен',
                                                               child:
-                                                                Checkbox(
-                                                                  value: notSure['multibarrel'],
-                                                                  activeColor: Colors.red,
-                                                                  onChanged: (val) {
-                                                                    notSure['multibarrel'] = val;
-                                                                    setState(() {});
-                                                                  }
+                                                                SizedBox(
+                                                                    width: 28.0,
+                                                                    child:
+                                                                      Checkbox(
+                                                                        value: notSure['multibarrel'],
+                                                                        activeColor: Colors.red,
+                                                                        onChanged: (val) {
+                                                                          notSure['multibarrel'] = val;
+                                                                          setState(() {});
+                                                                        }
+                                                                      )
                                                                 )
-                                                            )
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -723,15 +749,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                             Tooltip(
                                                               message: 'Не уверен',
                                                               child:
-                                                                Checkbox(
-                                                                  value: notSure['state'],
-                                                                  activeColor: Colors.red,
-                                                                  onChanged: (val) {
-                                                                    notSure['state'] = val;
-                                                                    setState(() {});
-                                                                  }
+                                                                SizedBox(
+                                                                  width: 28.0,
+                                                                  child:
+                                                                    Checkbox(
+                                                                      value: notSure['state'],
+                                                                      activeColor: Colors.red,
+                                                                      onChanged: (val) {
+                                                                        notSure['state'] = val;
+                                                                        setState(() {});
+                                                                      }
+                                                                    )
                                                                 )
-                                                            )
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -811,15 +842,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                             Tooltip(
                                                               message: 'Не уверен',
                                                               child:
-                                                                Checkbox(
-                                                                  value: notSure['firstthread'],
-                                                                  activeColor: Colors.red,
-                                                                  onChanged: (val) {
-                                                                    notSure['firstthread'] = val;
-                                                                    setState(() {});
-                                                                  }
+                                                                SizedBox(
+                                                                  width: 28.0,
+                                                                  child:
+                                                                    Checkbox(
+                                                                      value: notSure['firstthread'],
+                                                                      activeColor: Colors.red,
+                                                                      onChanged: (val) {
+                                                                        notSure['firstthread'] = val;
+                                                                        setState(() {});
+                                                                      }
+                                                                    )
                                                                 )
-                                                            )
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -932,15 +968,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                             Tooltip(
                                                               message: 'Не уверен',
                                                               child:
-                                                                Checkbox(
-                                                                  value: notSure['condition'],
-                                                                  activeColor: Colors.red,
-                                                                  onChanged: (val) {
-                                                                    notSure['condition'] = val;
-                                                                    setState(() {});
-                                                                  }
+                                                                SizedBox(
+                                                                  width: 28.0,
+                                                                  child:
+                                                                    Checkbox(
+                                                                      value: notSure['condition'],
+                                                                      activeColor: Colors.red,
+                                                                      onChanged: (val) {
+                                                                        notSure['condition'] = val;
+                                                                        setState(() {});
+                                                                      }
+                                                                    )
                                                                 )
-                                                            ) 
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -1055,7 +1096,8 @@ class TreeformPageState extends State<TreeformPage>{
                                                                     setState(() {});
                                                                   }
                                                                 )
-                                                            )
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -1139,15 +1181,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                             Tooltip(
                                                               message: 'Не уверен',
                                                               child:
-                                                                Checkbox(
-                                                                  value: notSure['neighbours'],
-                                                                  activeColor: Colors.red,
-                                                                  onChanged: (val) {
-                                                                    notSure['neighbours'] = val;
-                                                                    setState(() {});
-                                                                  }
+                                                                SizedBox(
+                                                                  width: 28.0,
+                                                                  child:
+                                                                    Checkbox(
+                                                                      value: notSure['neighbours'],
+                                                                      activeColor: Colors.red,
+                                                                      onChanged: (val) {
+                                                                        notSure['neighbours'] = val;
+                                                                        setState(() {});
+                                                                      }
+                                                                    )
                                                                 )
-                                                            )
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -1232,15 +1279,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                             Tooltip(
                                                               message: 'Не уверен',
                                                               child:
-                                                                Checkbox(
-                                                                  value: notSure['overall'],
-                                                                  activeColor: Colors.red,
-                                                                  onChanged: (val) {
-                                                                    notSure['overall'] = val;
-                                                                    setState(() {});
-                                                                  }
+                                                                SizedBox(
+                                                                  width: 28.0,
+                                                                  child:
+                                                                    Checkbox(
+                                                                      value: notSure['overall'],
+                                                                      activeColor: Colors.red,
+                                                                      onChanged: (val) {
+                                                                        notSure['overall'] = val;
+                                                                        setState(() {});
+                                                                      }
+                                                                    )
                                                                 )
-                                                            )
+                                                            ),
+                                                            Text('н/у', style: TextStyle(fontSize: 14)),
                                                           ],
                                                         )
                                                     )
@@ -1377,15 +1429,20 @@ class TreeformPageState extends State<TreeformPage>{
                                                               Tooltip(
                                                                 message: 'Не уверен',
                                                                 child:
-                                                                  Checkbox(
-                                                                    value: notSure['height'],
-                                                                    activeColor: Colors.red,
-                                                                    onChanged: (val) {
-                                                                      notSure['height'] = val;
-                                                                      setState(() {});
-                                                                    }
+                                                                  SizedBox(
+                                                                    width: 28.0,
+                                                                    child:
+                                                                    Checkbox(
+                                                                      value: notSure['height'],
+                                                                      activeColor: Colors.red,
+                                                                      onChanged: (val) {
+                                                                        notSure['height'] = val;
+                                                                        setState(() {});
+                                                                      }
+                                                                    )
                                                                   )
-                                                              )
+                                                              ),
+                                                              Text('н/у', style: TextStyle(fontSize: 14)),
                                                             ],
                                                           )
                                                       )

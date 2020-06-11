@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 //import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -22,6 +23,58 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 const MAXZOOM = 20.0;
 
 var uuid = Uuid(); 
+
+Iterable parseTrees(String responseBody) {
+  final parsed = json.decode(responseBody);
+  
+  if(parsed.containsKey('trees'))
+  {
+    return parsed['trees'];
+  }
+  return {};
+}
+
+Future<Iterable> fetchTrees(String uri) async {
+
+    BaseOptions options = BaseOptions(
+      baseUrl: uri,
+      responseType: ResponseType.plain,
+      connectTimeout: 30000,
+      receiveTimeout: 30000,
+      validateStatus: (code) {
+        if (code >= 200) {
+          return true;
+        }
+
+        return false;
+      });
+
+    Dio dio = Dio(options);
+    try {
+      Options options1 = Options(
+        followRedirects: true,
+        contentType: 'application/json', //ContentType.parse('application/json')
+      );
+
+      final Response response = await dio.post('/mobile/points', data: FormData.fromMap({}), options: options1);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return compute(parseTrees, response.data.toString());
+      } else
+        throw Exception('Authentication Error');
+    } on DioError catch (exception) {
+      if (exception == null ||
+          exception.toString().contains('SocketException')) {
+        throw Exception("Network Error");
+      } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT ||
+          exception.type == DioErrorType.CONNECT_TIMEOUT) {
+        throw Exception(
+            "Could'nt connect, please ensure you have a stable network.");
+      } else {
+        return {};
+      }
+    }
+}
+
 
 class HomePage extends StatefulWidget {
   static const String route = '/';
@@ -83,6 +136,93 @@ class HomePageState extends State<HomePage>{
         break;
       }
       ccounter++;
+    }
+  }
+
+  Future<dynamic> _loadPointsFast(String uri) async {
+    var responseTrees = await fetchTrees(uri);
+    markers = <Marker>[];
+    for(var tree in responseTrees)
+    {
+      Color mInnerColor = Color(0xff225D9C);
+      Color mBorderColor = Colors.green;
+      double mSize = 16;
+
+      switch(tree['layout'])
+      {
+          case 'small': {
+              mInnerColor = Color(0xff7EE043);
+              mSize = 12;
+          }
+          break;
+          case 'dead': {
+              mInnerColor = Color(0xff222222);
+          }
+          break;
+          case 'leaf': {
+              mInnerColor = Color(0xffe0c143);
+          }
+          break;
+          case 'needle': {
+              mInnerColor = Color(0xff7ee043);
+          }
+          break;
+          case 'cutdown': {
+              mInnerColor = Colors.red;
+              mBorderColor = Colors.red;
+              mSize = 14;
+          }
+          break;
+      }
+
+      Marker tempMarker = Marker(
+          width: mSize + 4,
+          height: mSize + 4,
+          point: LatLng(double.parse(tree['lat']), double.parse(tree['lon'])),
+          builder: (ctx) => Container(
+            child: 
+            GestureDetector(
+              onTap: () {
+                _scaffoldKey.currentState.hideCurrentSnackBar();
+                _scaffoldKey.currentState.showSnackBar(SnackBar(
+                  content:
+                    Row(
+                      children: <Widget>[                              
+                        //Text('#24-'+tree['id'].toString()+" "),
+                        Text(tree['name']),
+                        SizedBox(width: 15),
+                        RaisedButton(
+                          child: Text("Детально"),
+                          color: Colors.grey,
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              ViewPage.route,
+                              arguments: tree['id']??0,
+                            );                                  
+                          }
+                        )
+                      ],
+                    )
+                ));
+              },
+              child:
+                Container(
+                  width: mSize,
+                  height: mSize,
+                  decoration: new BoxDecoration(
+                    color: mInnerColor,
+                    borderRadius: new BorderRadius.all(new Radius.circular(50.0)),
+                    border: new Border.all(
+                      color: mBorderColor,
+                      width: 2.0,
+                    ),
+                  ),
+                ),
+            ),
+          ),
+        );
+      markers.add(tempMarker);
     }
   }
 
@@ -160,9 +300,10 @@ class HomePageState extends State<HomePage>{
                     onTap: () {
                       _scaffoldKey.currentState.hideCurrentSnackBar();
                       _scaffoldKey.currentState.showSnackBar(SnackBar(
-                        content: 
+                        content:
                           Row(
-                            children: <Widget>[
+                            children: <Widget>[                              
+                              //Text('#24-'+tree['id'].toString()+" "),
                               Text(tree['name']),
                               SizedBox(width: 15),
                               RaisedButton(
@@ -178,7 +319,6 @@ class HomePageState extends State<HomePage>{
                               )
                             ],
                           )
-                          
                       ));
                     },
                     child:
@@ -248,7 +388,7 @@ class HomePageState extends State<HomePage>{
           dropdownValue = currentCity.name;
 
           if(markers.length == 0)
-            _loadPoints(currentCity.uri).then((result){
+            _loadPointsFast(currentCity.uri).then((result){
               setState(() {
                 totalTrees = markers.length;                  
                 clusteredLO = MarkerClusterLayerOptions(

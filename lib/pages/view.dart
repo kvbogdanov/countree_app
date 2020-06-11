@@ -25,8 +25,16 @@ class ViewPageState extends State<ViewPage>{
   CountreeCity currentCity;
   int args;
 
+  // описание дерева
   String treetype = '';
+  int is_seedling = 0;
+  int is_alive = 0;
+  double diameter = 0;
+  int theight = 0;
+  String surround = '';
+  String state = '';
   var conditionsWidgets = List<Widget>();
+  var neighboursWidgets = List<Widget>();
   var imagesWidgets = List<Widget>();
   var pics = List<String>();
 
@@ -70,7 +78,7 @@ class ViewPageState extends State<ViewPage>{
       );
 
       Response response = await dio.post('/mobile/treedetail?id='+idtree, data: FormData.fromMap({}), options: options);
-      print(response);
+      //print(response);
       if (response.statusCode == 200 || response.statusCode == 201) {
 
         var responseJson = json.decode(response.data);
@@ -78,26 +86,32 @@ class ViewPageState extends State<ViewPage>{
         if(responseJson.containsKey('data'))
         {
           print(responseJson['data']);
-          treetype = responseJson['data']['treetype']??'';
-
-          conditionsWidgets = [];
-          for (var cond in responseJson['data']['conditions']) {
-            conditionsWidgets.add(Text(cond)); 
-          }
 
           pics = [];
           for (var pic in responseJson['data']['pics']) {
-            //imagesWidgets.add(Image.network(pic, fit: BoxFit.cover, height: 300.0)); 
             pics.add(pic);
-            /*
-            imagesWidgets.add(
-              Container(
-                child: Center(
-                  child: Image.network(pic, fit: BoxFit.cover, width: 1000)
-                ),
-              ) 
-            );
-            */
+          }
+
+          treetype = responseJson['data']['treetype']??'-';
+          is_alive = responseJson['data']['is_alive']??0;
+          is_seedling = responseJson['data']['is_seedling']??0;
+          diameter = responseJson['data']['diameter']??0;
+          theight = responseJson['data']['height']??0;
+          surround = responseJson['data']['surround']??'-';
+          state = responseJson['data']['state']??'';
+
+          conditionsWidgets = [];
+          if(responseJson['data']['conditions'].toString().length>0)
+            conditionsWidgets.add(Text('Состояние дерева:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)));
+          for (var cond in responseJson['data']['conditions']) {
+            conditionsWidgets.add(Text(cond, softWrap: true)); 
+          }
+
+          neighboursWidgets = [];
+          if(responseJson['data']['neighbours'].toString().length>0)
+            neighboursWidgets.add(Text('Окружение дерева:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)));
+          for (var cond in responseJson['data']['neighbours']) {
+            neighboursWidgets.add(Text(cond, overflow: TextOverflow.fade, maxLines: 1, softWrap: false)); 
           }
 
         }
@@ -152,57 +166,151 @@ class ViewPageState extends State<ViewPage>{
           //print('project snapshot data is: ${projectSnap.data}');
           return Container();
         }
-        return  Column(
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.all(15.0),
-              child: Column(
-                children: [
-                  Row(
-                    children: <Widget>[
-                      Text('#24-'+args.toString(), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    ],
+
+        if(is_alive==0 && is_seedling==0)
+          return  Column(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: <Widget>[
+                        Text(treetype, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ]
+                )
+              ),            
+              Container(
+                child: CarouselSlider(
+                  options: CarouselOptions(
+                      
+                      autoPlay: true,
+                      aspectRatio: 2.0,
+                      enlargeCenterPage: true,
                   ),
-                  Row(
-                    children: <Widget>[
-                      Text(treetype, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ]
+                  items: pics.map((item) => Container(
+                    child: Center(
+                      child: Image.network(item, fit: BoxFit.cover, width: 1000)
+                    ),
+                  )).toList()
+                )
+              ),
+              Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: <Widget>[
+                        Text('Диаметер (см): $diameter', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: <Widget>[
+                        Text('Высота (м): $theight', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    SizedBox(height: 10),                
+                    Row(
+                      children: <Widget>[
+                        Text('Многоствольное: н/д', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('Крона у дерева:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            Text('$state'),
+                          ],
+                        )
+                      ],
+                    ),  
+                    Row(
+                      children: <Widget>[
+                        Text('начинается на высоте: н/д', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      ],
+                    ), 
+                    SizedBox(height: 10), 
+                    conditionsWidgets.isNotEmpty?
+                    Row(
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: conditionsWidgets
+                        )
+                      ],
+                    ):Container(),
+                    surround.isNotEmpty?
+                    Row(
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('Условия роста:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            Text('$surround')
+                          ],
+                        )
+                      ],
+                    ):Container(),
+                    neighboursWidgets.isNotEmpty?
+                    Row(
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: neighboursWidgets
+                        )
+                      ],
+                    ):Container(),
+                    SizedBox(height: 10),
+                    Row(
+                      children: <Widget>[
+                        Text('Общая оценка: н/д', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      ],
+                    ),  
+                  ]
+                )
+              ),           
+            ],
+          );
+        else if(is_alive==1)
+          return  Column(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: <Widget>[
+                        Text('Мертвое дерево ', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ]
+                )
               )
-            ),            
-            Container(
-              child: CarouselSlider(
-                options: CarouselOptions(
-                    
-                    autoPlay: true,
-                    aspectRatio: 2.0,
-                    enlargeCenterPage: true,
-                ),
-                items: pics.map((item) => Container(
-                  child: Center(
-                    child: Image.network(item, fit: BoxFit.cover, width: 1000)
-                  ),
-                )).toList()
+            ]
+          ); 
+        else if(is_seedling==1)
+          return  Column(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: <Widget>[
+                        Text('Саженец ', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ]
+                )
               )
-            ),
-            Padding(
-              padding: EdgeInsets.all(15.0),
-              child: Column(
-                children: [
-                  Row(
-                    children: <Widget>[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: conditionsWidgets
-                      )
-                    ],
-                  )
-                ]
-              )
-            ),             
-          ],
-        );
+            ]
+          );          
       },
       future: _loadInfo("https://24.countree.ru", idtree),
     );
@@ -215,7 +323,7 @@ class ViewPageState extends State<ViewPage>{
 
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(title: Text('О проекте')),
+      appBar: AppBar(title: Text('#24-'+args.toString())),
       endDrawer: buildDrawer(context, ViewPage.route, signed:signed),
       body: treeinfoWidget(args.toString())
     );

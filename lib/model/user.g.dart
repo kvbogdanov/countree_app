@@ -38,6 +38,12 @@ class TableUser extends SqfEntityTableBase {
       SqfEntityFieldBase('role', DbType.integer,
           defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('updated', DbType.integer, isNotNull: false),
+      SqfEntityFieldBase('id_system', DbType.integer,
+          defaultValue: 0, isNotNull: false),
+      SqfEntityFieldBase('total_trees', DbType.integer,
+          defaultValue: 0, isNotNull: false),
+      SqfEntityFieldBase('moderated_trees', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('isActive', DbType.bool,
           defaultValue: false, isNotNull: false),
     ];
@@ -81,16 +87,38 @@ class User {
       this.email,
       this.role,
       this.updated,
+      this.id_system,
+      this.total_trees,
+      this.moderated_trees,
       this.isActive,
       this.isDeleted}) {
     _setDefaultValues();
   }
-  User.withFields(this.name, this.pass, this.email, this.role, this.updated,
-      this.isActive, this.isDeleted) {
+  User.withFields(
+      this.name,
+      this.pass,
+      this.email,
+      this.role,
+      this.updated,
+      this.id_system,
+      this.total_trees,
+      this.moderated_trees,
+      this.isActive,
+      this.isDeleted) {
     _setDefaultValues();
   }
-  User.withId(this.id_user, this.name, this.pass, this.email, this.role,
-      this.updated, this.isActive, this.isDeleted) {
+  User.withId(
+      this.id_user,
+      this.name,
+      this.pass,
+      this.email,
+      this.role,
+      this.updated,
+      this.id_system,
+      this.total_trees,
+      this.moderated_trees,
+      this.isActive,
+      this.isDeleted) {
     _setDefaultValues();
   }
   User.fromMap(Map<String, dynamic> o, {bool setDefaultValues = true}) {
@@ -113,6 +141,15 @@ class User {
     if (o['updated'] != null) {
       updated = int.tryParse(o['updated'].toString());
     }
+    if (o['id_system'] != null) {
+      id_system = int.tryParse(o['id_system'].toString());
+    }
+    if (o['total_trees'] != null) {
+      total_trees = int.tryParse(o['total_trees'].toString());
+    }
+    if (o['moderated_trees'] != null) {
+      moderated_trees = int.tryParse(o['moderated_trees'].toString());
+    }
     if (o['isActive'] != null) {
       isActive = o['isActive'] == 1 || o['isActive'] == true;
     }
@@ -127,6 +164,9 @@ class User {
   String email;
   int role;
   int updated;
+  int id_system;
+  int total_trees;
+  int moderated_trees;
   bool isActive;
   bool isDeleted;
 
@@ -165,6 +205,18 @@ class User {
 
     if (updated != null) {
       map['updated'] = updated;
+    }
+
+    if (id_system != null) {
+      map['id_system'] = id_system;
+    }
+
+    if (total_trees != null) {
+      map['total_trees'] = total_trees;
+    }
+
+    if (moderated_trees != null) {
+      map['moderated_trees'] = moderated_trees;
     }
 
     if (isActive != null) {
@@ -206,6 +258,18 @@ class User {
       map['updated'] = updated;
     }
 
+    if (id_system != null) {
+      map['id_system'] = id_system;
+    }
+
+    if (total_trees != null) {
+      map['total_trees'] = total_trees;
+    }
+
+    if (moderated_trees != null) {
+      map['moderated_trees'] = moderated_trees;
+    }
+
     if (isActive != null) {
       map['isActive'] = forQuery ? (isActive ? 1 : 0) : isActive;
     }
@@ -228,11 +292,34 @@ class User {
   }
 
   List<dynamic> toArgs() {
-    return [name, pass, email, role, updated, isActive, isDeleted];
+    return [
+      name,
+      pass,
+      email,
+      role,
+      updated,
+      id_system,
+      total_trees,
+      moderated_trees,
+      isActive,
+      isDeleted
+    ];
   }
 
   List<dynamic> toArgsWithIds() {
-    return [id_user, name, pass, email, role, updated, isActive, isDeleted];
+    return [
+      id_user,
+      name,
+      pass,
+      email,
+      role,
+      updated,
+      id_system,
+      total_trees,
+      moderated_trees,
+      isActive,
+      isDeleted
+    ];
   }
 
   static Future<List<User>> fromWebUrl(String url) async {
@@ -336,7 +423,7 @@ class User {
   ///
   /// Returns a <List<BoolResult>>
   Future<List<dynamic>> saveAll(List<User> users) async {
-    // final results = _mnUser.saveAll('INSERT OR REPLACE INTO user (id_user,name, pass, email, role, updated, isActive,isDeleted)  VALUES (?,?,?,?,?,?,?,?)',users);
+    // final results = _mnUser.saveAll('INSERT OR REPLACE INTO user (id_user,name, pass, email, role, updated, id_system, total_trees, moderated_trees, isActive,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?)',users);
     // return results; removed in sqfentity_gen 1.3.0+6
     CountreeDbModel().batchStart();
     for (final obj in users) {
@@ -351,7 +438,7 @@ class User {
   Future<int> upsert() async {
     try {
       if (await _mnUser.rawInsert(
-              'INSERT OR REPLACE INTO user (id_user,name, pass, email, role, updated, isActive,isDeleted)  VALUES (?,?,?,?,?,?,?,?)',
+              'INSERT OR REPLACE INTO user (id_user,name, pass, email, role, updated, id_system, total_trees, moderated_trees, isActive,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?)',
               [
                 id_user,
                 name,
@@ -359,6 +446,9 @@ class User {
                 email,
                 role,
                 updated,
+                id_system,
+                total_trees,
+                moderated_trees,
                 isActive,
                 isDeleted
               ]) ==
@@ -387,7 +477,7 @@ class User {
   /// Returns a BoolCommitResult
   Future<BoolCommitResult> upsertAll(List<User> users) async {
     final results = await _mnUser.rawInsertAll(
-        'INSERT OR REPLACE INTO user (id_user,name, pass, email, role, updated, isActive,isDeleted)  VALUES (?,?,?,?,?,?,?,?)',
+        'INSERT OR REPLACE INTO user (id_user,name, pass, email, role, updated, id_system, total_trees, moderated_trees, isActive,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?)',
         users);
     return results;
   }
@@ -435,6 +525,9 @@ class User {
 
   void _setDefaultValues() {
     role = role ?? 0;
+    id_system = id_system ?? 0;
+    total_trees = total_trees ?? 0;
+    moderated_trees = moderated_trees ?? 0;
     isActive = isActive ?? false;
     isDeleted = isDeleted ?? false;
   }
@@ -853,6 +946,22 @@ class UserFilterBuilder extends SearchCriteria {
     return _updated = setField(_updated, 'updated', DbType.integer);
   }
 
+  UserField _id_system;
+  UserField get id_system {
+    return _id_system = setField(_id_system, 'id_system', DbType.integer);
+  }
+
+  UserField _total_trees;
+  UserField get total_trees {
+    return _total_trees = setField(_total_trees, 'total_trees', DbType.integer);
+  }
+
+  UserField _moderated_trees;
+  UserField get moderated_trees {
+    return _moderated_trees =
+        setField(_moderated_trees, 'moderated_trees', DbType.integer);
+  }
+
   UserField _isActive;
   UserField get isActive {
     return _isActive = setField(_isActive, 'isActive', DbType.bool);
@@ -1176,6 +1285,25 @@ class UserFields {
   static TableField get updated {
     return _fUpdated =
         _fUpdated ?? SqlSyntax.setField(_fUpdated, 'updated', DbType.integer);
+  }
+
+  static TableField _fId_system;
+  static TableField get id_system {
+    return _fId_system = _fId_system ??
+        SqlSyntax.setField(_fId_system, 'id_system', DbType.integer);
+  }
+
+  static TableField _fTotal_trees;
+  static TableField get total_trees {
+    return _fTotal_trees = _fTotal_trees ??
+        SqlSyntax.setField(_fTotal_trees, 'total_trees', DbType.integer);
+  }
+
+  static TableField _fModerated_trees;
+  static TableField get moderated_trees {
+    return _fModerated_trees = _fModerated_trees ??
+        SqlSyntax.setField(
+            _fModerated_trees, 'moderated_trees', DbType.integer);
   }
 
   static TableField _fIsActive;

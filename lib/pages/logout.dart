@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:countree/model/user.dart';
 
 class LogoutPage extends StatefulWidget {
   static const String route = 'logout';
@@ -17,6 +18,9 @@ class LogoutPageState extends State<LogoutPage>{
   _setLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('logged', false);
+
+    await User().select().delete();
+
     //setState(() {});
     return false;
   }  

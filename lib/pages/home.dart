@@ -19,6 +19,7 @@ import 'package:dio/dio.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 import 'package:countree/pages/view.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:countree/model/user.dart';
 
 const MAXZOOM = 20.0;
 
@@ -97,7 +98,10 @@ class HomePageState extends State<HomePage>{
 
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return (prefs.getBool('logged') ?? false);
+    final res = (prefs.getBool('logged') ?? false);
+    if(res == true)
+      return await loadCurrentUser();
+    return res;
   }  
 
   _getMapLayer() async {
@@ -373,6 +377,7 @@ class HomePageState extends State<HomePage>{
     ];
   LayerOptions clusteredLO;
   LayerOptions nonClusteredLO;
+  User currentUser;
 
 
   @override
@@ -422,7 +427,14 @@ class HomePageState extends State<HomePage>{
 
     _getLoggedState().then((result){
         setState(() {
-          signed = result;
+          print(result);
+          if(result is User)
+          {
+            currentUser = result;
+            signed = true;
+          }
+          else
+            signed = false;
         });
     });
 
@@ -437,7 +449,7 @@ class HomePageState extends State<HomePage>{
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(title: Text('Countree')),
-      endDrawer: buildDrawer(context, HomePage.route, signed:signed),
+      endDrawer: buildDrawer(context, HomePage.route, signed:signed, cu: currentUser),
       body: Padding(
         padding: EdgeInsets.all(0.0),
         child: Column(

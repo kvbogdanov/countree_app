@@ -6,11 +6,36 @@ import 'package:countree/pages/mytrees.dart';
 import 'package:countree/pages/login.dart';
 import 'package:countree/pages/logout.dart';
 import 'package:countree/pages/about.dart';
+import 'package:countree/model/user.dart';
 
 const double MENUSIZE = 20;
 
-Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = false, Function setState}) {
+Future<User> loadCurrentUser() async
+{
+  final currentUser = await User().select().toSingle();
+//  print(currentUser.toJson());
+  return currentUser;
+}
+
+String getInitials(userName) {
+  List<String> names = userName.split(" ");
+  String initials = "";
+  int numWords = 1;
+  
+  if(numWords < names.length) {
+    numWords = names.length;
+  }
+
+  for(var i = 0; i < numWords; i++){
+    initials += '${names[i][0]}';
+  }
+  return initials;
+}
+
+Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = false, Function setState, User cu}) {
   precacheImage(AssetImage("assets/images/countree_logo.png"), context);
+
+
   return Drawer(
     child: ListView(
       children: <Widget>[
@@ -28,8 +53,8 @@ Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = fal
           )
         :
         UserAccountsDrawerHeader(
-          accountName: Text("Иван Иванов"),
-          accountEmail: Text("ivanov1991@gmail.com"),
+          accountName: Text(cu!=null?cu.name:'Анонимный пользователь'),
+          accountEmail: Text(cu!=null?cu.email:'Неизвестен'),
           decoration: BoxDecoration(
             color: null
           ),
@@ -37,7 +62,7 @@ Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = fal
             CircleAvatar(
               backgroundColor: countreeTheme.shade400,
               child: Text(
-                "ИИ",
+                getInitials(cu!=null?cu.name:'Анонимный Пользователь'),
                 style: TextStyle(fontSize: 40.0, color: Colors.white),
               ),
             ),
@@ -45,7 +70,7 @@ Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = fal
             CircleAvatar(
               backgroundColor: countreeTheme.shade100,
               child: Text(
-                "23",
+                cu!=null?cu.total_trees.toString():'0',
                 style: TextStyle(fontSize: 12.0, color: countreeTheme.shade800),
               ),
             ),

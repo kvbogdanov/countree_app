@@ -19,6 +19,9 @@ const tableUser = SqfEntityTable(
     SqfEntityField('email', DbType.text),
     SqfEntityField('role', DbType.integer, defaultValue: 0),
     SqfEntityField('updated', DbType.integer),
+    SqfEntityField('id_system', DbType.integer, defaultValue: 0),    
+    SqfEntityField('total_trees', DbType.integer, defaultValue: 0),    
+    SqfEntityField('moderated_trees', DbType.integer, defaultValue: 0),    
     SqfEntityField('isActive', DbType.bool, defaultValue: false),
   ]
 );

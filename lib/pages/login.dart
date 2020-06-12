@@ -10,6 +10,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 //import 'package:flutter/material.dart';
 
+import 'package:countree/model/user.dart';
+
 class LoginWithRestfulApi extends StatefulWidget {
   @override
   _LoginWithRestfulApiState createState() => _LoginWithRestfulApiState();
@@ -23,9 +25,12 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
     return (prefs.getBool('logged') ?? false);
   }
   
-  _setLoggedState() async {
+  _setLoggedState(JsonUser user) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('logged', true);
+    await User().select().delete();
+    await User(name: user.fullname, email: user.email, role: user.role, id_system: user.id, total_trees: user.totalTrees, moderated_trees: user.moderatedTrees ).save();
+
     setState(() {});
     return true;    
   }
@@ -66,7 +71,8 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
     _getLoggedState().then((result){
       if(result)
         Timer.run(() {
-          Navigator.of(context).pushNamed("/");
+          //Navigator.of(context).pushReplacementNamed("/");
+          Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
         });      
     });
 
@@ -144,11 +150,16 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
                     _emailController.text, _passwordController.text);
                 setState(() => _isLoading = false);
                 
-                JsonUser user = JsonUser.fromJson(jsonDecode(res));
+                var userArray = jsonDecode(res);
+                print(userArray);
+                JsonUser user = JsonUser.fromJson(userArray);
+
+                
 
                 if (user is JsonUser) {
-                  _setLoggedState();
-                  Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
+                  _setLoggedState(user).then((result){
+                    Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
+                  });
                 }
               },
            ),

@@ -427,7 +427,6 @@ class HomePageState extends State<HomePage>{
 
     _getLoggedState().then((result){
         setState(() {
-          print(result);
           if(result is User)
           {
             currentUser = result;

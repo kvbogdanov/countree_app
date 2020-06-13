@@ -12,6 +12,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:location/location.dart';
 import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:countree/model/user.dart';
 
 const MAXZOOM = 20.0;
 
@@ -43,7 +44,10 @@ class TreeformPageState extends State<TreeformPage>{
 
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return (prefs.getBool('logged') ?? false);
+    final res = (prefs.getBool('logged') ?? false);
+    if(res == true)
+      return await loadCurrentUser();
+    return res;
   }  
 
   Location location = new Location();
@@ -65,6 +69,8 @@ class TreeformPageState extends State<TreeformPage>{
   LayerOptions clusteredLO;
   LayerOptions nonClusteredLO;
 
+  User currentUser;
+
   Map<String, bool> notSure = {
     'treetype' : false,
     'isalive': false,
@@ -81,6 +87,7 @@ class TreeformPageState extends State<TreeformPage>{
   };
 
   _getCurrentLocation() async {
+
     _serviceEnabled = await location.serviceEnabled();
     if (!_serviceEnabled) {
       _serviceEnabled = await location.requestService();
@@ -100,10 +107,9 @@ class TreeformPageState extends State<TreeformPage>{
     _locationData = await location.getLocation();   
 
     //print(_locationData.latitude.toString() + ' ' + _locationData.longitude.toString());
+    //return new LatLng(56.003313,92.8486668);
 
-    return new LatLng(56.003313,92.8486668);
-
-    //return new LatLng(_locationData.latitude, _locationData.longitude); 
+    return new LatLng(_locationData.latitude, _locationData.longitude); 
   }
 
   void _handleTap(LatLng latlng) {
@@ -118,20 +124,28 @@ class TreeformPageState extends State<TreeformPage>{
 
     _getLoggedState().then((result){
         setState(() {
-          signed = result;
+          if(result is User)
+          {
+            currentUser = result;
+            signed = true;
+          }
+          else
+            signed = false;
         });
-    });
+    });    
 
     mapController = MapController();
     currentCity = CountreeCities.cities[0];
     _getCurrentCity().then((result){
         setState(() {
           currentCity = result;
+          print("test1");
           mapController.move(currentCity.center, 18.0);     
         });
     });
     
     _getCurrentLocation().then((result){
+      print(result);
       mapController.move(result, zoomLevel);
       currentPoint = result;
       _handleTap(currentPoint);
@@ -184,7 +198,7 @@ class TreeformPageState extends State<TreeformPage>{
         Scaffold(
           key: _scaffoldKey,
           appBar: AppBar(title: Text('Countree')),
-          endDrawer: buildDrawer(context, TreeformPage.route, signed:signed),
+          endDrawer: buildDrawer(context, TreeformPage.route, signed:signed, cu: currentUser),
           body: 
             SingleChildScrollView(
               child:
@@ -212,6 +226,16 @@ class TreeformPageState extends State<TreeformPage>{
                         ),
                         layers: mainLayers,
                       ) 
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 2),
+                      child:
+                        Row(
+                          children: <Widget>[
+                            Text('Lon: ${currentPoint==null?'0':currentPoint.longitude.toString()}'),                      
+                            Text(' Lat: ${currentPoint==null?'0':currentPoint.latitude.toString()}')
+                          ],
+                        ),
                     ),
                     Padding(
                       padding: EdgeInsets.all(10.0),
@@ -1367,6 +1391,7 @@ class TreeformPageState extends State<TreeformPage>{
                                                 flex: 10,
                                                 child:
                                                   FormBuilderImagePicker(
+                                                    initialValue: ['https://24.countree.ru/assets/preview/88/75/887592c95b458d783e2f661723185e94.jpg'],
                                                     attribute: "treeimages",
                                                   )
                                               )

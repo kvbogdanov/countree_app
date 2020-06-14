@@ -13,6 +13,11 @@ import 'package:location/location.dart';
 import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:countree/model/user.dart';
+import 'package:countree/model/tree.dart' as Dbtree;
+
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:image/image.dart' as LocalImage;
 
 const MAXZOOM = 20.0;
 
@@ -48,6 +53,11 @@ class TreeformPageState extends State<TreeformPage>{
     if(res == true)
       return await loadCurrentUser();
     return res;
+  } 
+
+  Future<String>  _localPath() async {
+    final directory = await  getApplicationDocumentsDirectory();
+    return directory.path;
   }  
 
   Location location = new Location();
@@ -70,6 +80,7 @@ class TreeformPageState extends State<TreeformPage>{
   LayerOptions nonClusteredLO;
 
   User currentUser;
+  String localDocPath;
 
   Map<String, bool> notSure = {
     'treetype' : false,
@@ -86,30 +97,42 @@ class TreeformPageState extends State<TreeformPage>{
     'height' : false,
   };
 
-  _getCurrentLocation() async {
+  _getCurrentLocation({bool useStored: true}) async {
 
-    _serviceEnabled = await location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final curLat = (prefs.getDouble('latitude') ?? 0);
+    final curLon = (prefs.getDouble('longitude') ?? 0);
+    final curZoom = (prefs.getDouble('zoom') ?? 0);
+
+    print(curLat.toString() + ' ' + curLon.toString());
+
+    if(useStored==false || curLat==0)
+    {
+      _serviceEnabled = await location.serviceEnabled();
       if (!_serviceEnabled) {
-        return;
+        _serviceEnabled = await location.requestService();
+        if (!_serviceEnabled) {
+          return;
+        }
       }
-    }
 
-    _permissionGranted = await location.hasPermission();
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
-        return;
+      _permissionGranted = await location.hasPermission();
+      if (_permissionGranted == PermissionStatus.denied) {
+        _permissionGranted = await location.requestPermission();
+        if (_permissionGranted != PermissionStatus.granted) {
+          return;
+        }
       }
+      _locationData = await location.getLocation();   
+      //print(_locationData.latitude.toString() + ' ' + _locationData.longitude.toString());
+      //return new LatLng(56.003313,92.8486668);
+      return new LatLng(_locationData.latitude, _locationData.longitude);
     }
-
-    _locationData = await location.getLocation();   
-
-    //print(_locationData.latitude.toString() + ' ' + _locationData.longitude.toString());
-    //return new LatLng(56.003313,92.8486668);
-
-    return new LatLng(_locationData.latitude, _locationData.longitude); 
+    else
+    {
+      zoomLevel = curZoom;
+      return new LatLng(curLat, curLon);
+    }
   }
 
   void _handleTap(LatLng latlng) {
@@ -121,6 +144,10 @@ class TreeformPageState extends State<TreeformPage>{
   @override
   void initState() {
     super.initState();
+
+    _localPath().then((result){
+      localDocPath = result;
+    });
 
     _getLoggedState().then((result){
         setState(() {
@@ -139,13 +166,11 @@ class TreeformPageState extends State<TreeformPage>{
     _getCurrentCity().then((result){
         setState(() {
           currentCity = result;
-          print("test1");
           mapController.move(currentCity.center, 18.0);     
         });
     });
     
     _getCurrentLocation().then((result){
-      print(result);
       mapController.move(result, zoomLevel);
       currentPoint = result;
       _handleTap(currentPoint);
@@ -162,16 +187,139 @@ class TreeformPageState extends State<TreeformPage>{
         actions: <Widget>[
           new FlatButton(
             child: new Text('Остаться', style: TextStyle(fontSize: 20)),
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () =>
+              Navigator.of(context).pop(false)
           ),
           new FlatButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () async { 
+              await _rememberMapPosition();
+              Navigator.of(context).pop(true);
+            },
             child: new Text('Выйти', style: TextStyle(fontSize: 20, color: Colors.red)),
           ),
         ],
       ),
     )) ?? false;
   }  
+
+  List<String> validateTree(){
+    final treeInfo = _fbKey.currentState.value;
+    var errors = List<String>();
+
+    if(treeInfo['isalive']==true || treeInfo['isseedling']==true)
+      return [];
+
+    if(treeInfo['diameter'] == 0 && notSure['diameter'] == false)
+      errors.add("Обхват ствола должен быть больше нуля");
+
+    if(treeInfo['state']==null && notSure['state'] == false)
+      errors.add("Необходимо указать крону у дерева");
+
+    if(treeInfo['surroundings']==null && notSure['surroundings'] == false)
+      errors.add("Необходимо указать условия роста");
+
+    if(treeInfo['treeimages'].length == 0)
+      errors.add("Необходимо добавить хотя бы одно фото");
+
+    if(treeInfo['height'] == 0 && notSure['height'] == false)
+      errors.add("Высота дерева должна быть больше нуля");
+
+    return errors;
+  }
+
+  Future<bool> saveTreeLocal() async
+  {
+    final treeInfo = _fbKey.currentState.value;
+
+    if(treeInfo['isalive']==true)
+    {
+      var ctree = Dbtree.Tree(
+        created: new DateTime.now().millisecondsSinceEpoch,
+        id_user: currentUser.id_system,
+        id_treetype: TreeTypeList.getByName(treeInfo['treetype']).id,
+        custom_treetype: treeInfo['custom_treetype'],
+        notsure_treetype: notSure['treetype']==true?1:0,
+        longitude: currentPoint.longitude,
+        latitude: currentPoint.latitude,
+        is_alive: treeInfo['isalive']==true?1:0,
+        notsure_is_alive: notSure['isalive']==true?1:0,
+      );
+      var res = await ctree.save();
+      return res>0;
+    }
+    else if(treeInfo['isseedling']==true)
+    {
+      var ctree = Dbtree.Tree(
+        created: new DateTime.now().millisecondsSinceEpoch,
+        id_user: currentUser.id_system,
+        id_treetype: TreeTypeList.getByName(treeInfo['treetype']).id,
+        custom_treetype: treeInfo['custom_treetype'],
+        notsure_treetype: notSure['treetype']==true?1:0,
+        longitude: currentPoint.longitude,
+        latitude: currentPoint.latitude,
+        is_alive: treeInfo['isalive']==true?1:0,
+        notsure_is_alive: notSure['isalive']==true?1:0,
+        is_seedling: treeInfo['isseedling']==true?1:0,
+        notsure_is_seedling: notSure['isseedling']==true?1:0,
+      ); 
+      var res = await ctree.save();
+      return res>0;           
+    }
+    else
+    {
+
+      var imagePaths = List<String>();
+      for(var ti in treeInfo['treeimages'])
+      {
+        imagePaths.add(ti.path);
+      }      
+      var ctree = Dbtree.Tree(
+        created: new DateTime.now().millisecondsSinceEpoch,
+        id_user: currentUser.id_system,
+        id_treetype: TreeTypeList.getByName(treeInfo['treetype']).id,
+        custom_treetype: treeInfo['custom_treetype'],
+        notsure_treetype: notSure['treetype']==true?1:0,
+        longitude: currentPoint.longitude,
+        latitude: currentPoint.latitude,
+        is_alive: treeInfo['isalive']==true?1:0,
+        notsure_is_alive: notSure['isalive']==true?1:0,
+        is_seedling: treeInfo['isseedling']==true?1:0,
+        notsure_is_seedling: notSure['isseedling']==true?1:0,
+        diameter: int.parse(treeInfo['diameter']),
+        notsure_diameter: notSure['diameter']==true?1:0,
+        multibarrel: treeInfo['multibarrel']==true?1:0,
+        notsure_multibarrel: notSure['multibarrel']==true?1:0,
+        id_state: treeInfo['state'],
+        notsure_id_state: notSure['state']==true?1:0,
+        firstthread: treeInfo['firstthread']==null?0:treeInfo['firstthread'],
+        notsure_firstthread: notSure['firstthread']==true?1:0,
+        ids_condition: treeInfo['condition'].map((i) => i.toString()).join(","),
+        custom_condition: treeInfo['custom_condition'],
+        notsure_ids_condition: notSure['condition']==true?1:0,
+        id_surroundings: treeInfo['surroundings'],
+        notsure_id_surroundings: notSure['surroundings']==true?1:0,
+        ids_neighbours: treeInfo['neighbours'].map((i) => i.toString()).join(","),
+        notsure_ids_neighbours: notSure['neighbours']==true?1:0, 
+        id_overall: treeInfo['overall']==null?0:treeInfo['overall'],
+        height: treeInfo['height'], //double.parse(treeInfo['height']),
+        images: imagePaths.join(";")
+      ); //.save();
+      var res = await ctree.save();
+      return res>0;
+
+    };
+
+    return false;
+  }
+
+  Future<bool> _rememberMapPosition() async
+  {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('latitude', mapController.center.latitude);
+    await prefs.setDouble('longitude', mapController.center.longitude);
+    await prefs.setDouble('zoom', mapController.zoom);
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -232,8 +380,21 @@ class TreeformPageState extends State<TreeformPage>{
                       child:
                         Row(
                           children: <Widget>[
-                            Text('Lon: ${currentPoint==null?'0':currentPoint.longitude.toString()}'),                      
-                            Text(' Lat: ${currentPoint==null?'0':currentPoint.latitude.toString()}')
+                            Text('Lon: ${currentPoint==null?'0':currentPoint.longitude.toString()}\nLat: ${currentPoint==null?'0':currentPoint.latitude.toString()}'), 
+                            Spacer(),
+                            GestureDetector(
+                              onTap: () async {
+                                _getCurrentLocation(useStored: false).then((result){
+                                  setState(() {
+                                    mapController.move(result, zoomLevel);
+                                    currentPoint = result;
+                                    _handleTap(currentPoint);                                    
+                                  });
+                                });  
+                              },
+                              child: Icon(Icons.gps_fixed , color: countreeTheme.shade400, size: 40),
+                            ),
+                            //Text(' Lat: ${currentPoint==null?'0':currentPoint.latitude.toString()}')
                           ],
                         ),
                     ),
@@ -1391,7 +1552,7 @@ class TreeformPageState extends State<TreeformPage>{
                                                 flex: 10,
                                                 child:
                                                   FormBuilderImagePicker(
-                                                    initialValue: ['https://24.countree.ru/assets/preview/88/75/887592c95b458d783e2f661723185e94.jpg'],
+                                                    //initialValue: ['https://24.countree.ru/assets/preview/88/75/887592c95b458d783e2f661723185e94.jpg'],
                                                     attribute: "treeimages",
                                                   )
                                               )
@@ -1516,34 +1677,71 @@ class TreeformPageState extends State<TreeformPage>{
                             RaisedButton(
                               color: Colors.deepOrangeAccent,
                               child: Text("Сохранить и отправить", style: TextStyle(fontSize: 16, color: Colors.white)),
-                              onPressed: () {
+                              onPressed: () async {
                                 if (_fbKey.currentState.saveAndValidate()) {
                                   print(_fbKey.currentState.value);
+                                  final errors = validateTree(); 
 
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => new AlertDialog(
-                                      title: new Text('Информация о дереве сохранена'),
-                                      content: new Text('Вы можете добавить ещё одно дерево или вернуться к карте'),
-                                      actions: <Widget>[
-                                        new FlatButton(
-                                          child: new Text('На карту', style: TextStyle(fontSize: 20)),
-                                          onPressed: () => {
-                                            Navigator.of(context).pop(true),
-                                            Navigator.of(context).pop(true),
-                                          }
+                                  if(errors.length == 0)
+                                  {
+                                    //await saveTreeLocal();
+                                    /*
+                                    final File tstimage = _fbKey.currentState.value['treeimages'][0];
+                                    print(tstimage.path);
+                                    //var testFilename = _fbKey.currentState.value['treeimages'][0].toString().replaceAll("'", "").replaceAll("File: ", "file://");
+
+                                    LocalImage.Image image = LocalImage.decodeImage(tstimage.readAsBytesSync());
+                                    LocalImage.Image thumbnail = LocalImage.copyResize(image, width: 120); 
+                                    new File('$localDocPath/thumbnail-test.jpg')
+                                      ..writeAsBytesSync(LocalImage.encodeJpg(thumbnail));                                  
+                                    */
+                                    saveTreeLocal().then((value) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => new AlertDialog(
+                                          title: new Text('Информация о дереве сохранена'),
+                                          content: new Text('Вы можете добавить ещё одно дерево или вернуться к карте'),
+                                          actions: <Widget>[
+                                            new FlatButton(
+                                              child: new Text('На карту', style: TextStyle(fontSize: 20)),
+                                              onPressed: () async {
+                                                await _rememberMapPosition();
+                                                Navigator.of(context).pop(true);
+                                                Navigator.of(context).pop(true);
+                                              }
+                                            ),
+                                            new FlatButton(
+                                              child: new Text('Ещё дерево', style: TextStyle(fontSize: 20, color: Colors.red)),
+                                              onPressed: () async {
+                                                await _rememberMapPosition();
+                                                Navigator.of(context).pop(true);
+                                                Navigator.of(context).pop(true);
+                                                Navigator.pushNamed(context, TreeformPage.route); //Navigator.pushNamedAndRemoveUntil(context, "treeform", (r) => false),
+                                              }
+                                            ),
+                                          ],
                                         ),
-                                        new FlatButton(
-                                          child: new Text('Ещё дерево', style: TextStyle(fontSize: 20, color: Colors.red)),
-                                          onPressed: () => {
-                                            Navigator.of(context).pop(true),
-                                            Navigator.of(context).pop(true),
-                                            Navigator.pushNamed(context, TreeformPage.route), //Navigator.pushNamedAndRemoveUntil(context, "treeform", (r) => false),
-                                          }
-                                        ),
-                                      ],
-                                    ),
-                                  );                                
+                                      );
+                                    });
+                                  }
+                                  else
+                                  {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => new AlertDialog(
+                                        title: new Text('В форме есть ошибки'),
+                                        content: new Text(errors.join('\n')),
+                                        actions: <Widget>[
+                                          new FlatButton(
+                                            child: new Text('Понятно'),
+                                            onPressed: () => {
+                                              Navigator.of(context).pop(),
+                                            }
+                                          ),
+                                        ],
+                                      ),
+                                    );                                    
+                                  }                                
 
                                 }
                               },
@@ -1577,7 +1775,11 @@ class TreeformPageState extends State<TreeformPage>{
                               onPressed: () => Navigator.of(context).pop(false),
                             ),
                             new FlatButton(
-                              onPressed: () => Navigator.of(context).pop(false),
+                              onPressed: () async {
+                                final last = await Dbtree.Tree().select().orderByDesc('created').toSingle();
+                                print(last.created);
+                                Navigator.of(context).pop(false);
+                              },
                               child: new Text('Скопировать', style: TextStyle(fontSize: 20, color: Colors.red)),
                             ),
                           ],

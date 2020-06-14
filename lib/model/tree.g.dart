@@ -42,25 +42,49 @@ class TableTree extends SqfEntityTableBase {
       SqfEntityFieldBase('id_user', DbType.integer, isNotNull: false),
       SqfEntityFieldBase('id_treetype', DbType.integer, isNotNull: false),
       SqfEntityFieldBase('custom_treetype', DbType.text, isNotNull: false),
+      SqfEntityFieldBase('notsure_treetype', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('longitude', DbType.real, isNotNull: false),
       SqfEntityFieldBase('latitude', DbType.real, isNotNull: false),
       SqfEntityFieldBase('is_alive', DbType.integer,
           defaultValue: 0, isNotNull: false),
+      SqfEntityFieldBase('notsure_is_alive', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('is_seedling', DbType.integer,
+          defaultValue: 0, isNotNull: false),
+      SqfEntityFieldBase('notsure_is_seedling', DbType.integer,
           defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('diameter', DbType.integer,
           defaultValue: 0, isNotNull: false),
+      SqfEntityFieldBase('notsure_diameter', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('multibarrel', DbType.integer,
           defaultValue: 0, isNotNull: false),
+      SqfEntityFieldBase('notsure_multibarrel', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('id_state', DbType.integer, isNotNull: false),
+      SqfEntityFieldBase('notsure_id_state', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('firstthread', DbType.integer, isNotNull: false),
+      SqfEntityFieldBase('notsure_firstthread', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('ids_condition', DbType.text, isNotNull: false),
       SqfEntityFieldBase('custom_condition', DbType.text, isNotNull: false),
+      SqfEntityFieldBase('notsure_ids_condition', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('id_surroundings', DbType.integer, isNotNull: false),
+      SqfEntityFieldBase('notsure_id_surroundings', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('ids_neighbours', DbType.text, isNotNull: false),
+      SqfEntityFieldBase('notsure_ids_neighbours', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('id_overall', DbType.integer, isNotNull: false),
+      SqfEntityFieldBase('notsure_id_overall', DbType.integer,
+          defaultValue: 0, isNotNull: false),
       SqfEntityFieldBase('images', DbType.text, isNotNull: false),
       SqfEntityFieldBase('height', DbType.real, isNotNull: false),
+      SqfEntityFieldBase('notsure_height', DbType.integer,
+          defaultValue: 0, isNotNull: false),
     ];
     super.init();
   }
@@ -104,21 +128,33 @@ class Tree {
       this.id_user,
       this.id_treetype,
       this.custom_treetype,
+      this.notsure_treetype,
       this.longitude,
       this.latitude,
       this.is_alive,
+      this.notsure_is_alive,
       this.is_seedling,
+      this.notsure_is_seedling,
       this.diameter,
+      this.notsure_diameter,
       this.multibarrel,
+      this.notsure_multibarrel,
       this.id_state,
+      this.notsure_id_state,
       this.firstthread,
+      this.notsure_firstthread,
       this.ids_condition,
       this.custom_condition,
+      this.notsure_ids_condition,
       this.id_surroundings,
+      this.notsure_id_surroundings,
       this.ids_neighbours,
+      this.notsure_ids_neighbours,
       this.id_overall,
+      this.notsure_id_overall,
       this.images,
       this.height,
+      this.notsure_height,
       this.isDeleted}) {
     _setDefaultValues();
   }
@@ -130,21 +166,33 @@ class Tree {
       this.id_user,
       this.id_treetype,
       this.custom_treetype,
+      this.notsure_treetype,
       this.longitude,
       this.latitude,
       this.is_alive,
+      this.notsure_is_alive,
       this.is_seedling,
+      this.notsure_is_seedling,
       this.diameter,
+      this.notsure_diameter,
       this.multibarrel,
+      this.notsure_multibarrel,
       this.id_state,
+      this.notsure_id_state,
       this.firstthread,
+      this.notsure_firstthread,
       this.ids_condition,
       this.custom_condition,
+      this.notsure_ids_condition,
       this.id_surroundings,
+      this.notsure_id_surroundings,
       this.ids_neighbours,
+      this.notsure_ids_neighbours,
       this.id_overall,
+      this.notsure_id_overall,
       this.images,
       this.height,
+      this.notsure_height,
       this.isDeleted) {
     _setDefaultValues();
   }
@@ -157,21 +205,33 @@ class Tree {
       this.id_user,
       this.id_treetype,
       this.custom_treetype,
+      this.notsure_treetype,
       this.longitude,
       this.latitude,
       this.is_alive,
+      this.notsure_is_alive,
       this.is_seedling,
+      this.notsure_is_seedling,
       this.diameter,
+      this.notsure_diameter,
       this.multibarrel,
+      this.notsure_multibarrel,
       this.id_state,
+      this.notsure_id_state,
       this.firstthread,
+      this.notsure_firstthread,
       this.ids_condition,
       this.custom_condition,
+      this.notsure_ids_condition,
       this.id_surroundings,
+      this.notsure_id_surroundings,
       this.ids_neighbours,
+      this.notsure_ids_neighbours,
       this.id_overall,
+      this.notsure_id_overall,
       this.images,
       this.height,
+      this.notsure_height,
       this.isDeleted) {
     _setDefaultValues();
   }
@@ -201,6 +261,9 @@ class Tree {
     if (o['custom_treetype'] != null) {
       custom_treetype = o['custom_treetype'] as String;
     }
+    if (o['notsure_treetype'] != null) {
+      notsure_treetype = int.tryParse(o['notsure_treetype'].toString());
+    }
     if (o['longitude'] != null) {
       longitude = double.tryParse(o['longitude'].toString());
     }
@@ -210,20 +273,38 @@ class Tree {
     if (o['is_alive'] != null) {
       is_alive = int.tryParse(o['is_alive'].toString());
     }
+    if (o['notsure_is_alive'] != null) {
+      notsure_is_alive = int.tryParse(o['notsure_is_alive'].toString());
+    }
     if (o['is_seedling'] != null) {
       is_seedling = int.tryParse(o['is_seedling'].toString());
+    }
+    if (o['notsure_is_seedling'] != null) {
+      notsure_is_seedling = int.tryParse(o['notsure_is_seedling'].toString());
     }
     if (o['diameter'] != null) {
       diameter = int.tryParse(o['diameter'].toString());
     }
+    if (o['notsure_diameter'] != null) {
+      notsure_diameter = int.tryParse(o['notsure_diameter'].toString());
+    }
     if (o['multibarrel'] != null) {
       multibarrel = int.tryParse(o['multibarrel'].toString());
+    }
+    if (o['notsure_multibarrel'] != null) {
+      notsure_multibarrel = int.tryParse(o['notsure_multibarrel'].toString());
     }
     if (o['id_state'] != null) {
       id_state = int.tryParse(o['id_state'].toString());
     }
+    if (o['notsure_id_state'] != null) {
+      notsure_id_state = int.tryParse(o['notsure_id_state'].toString());
+    }
     if (o['firstthread'] != null) {
       firstthread = int.tryParse(o['firstthread'].toString());
+    }
+    if (o['notsure_firstthread'] != null) {
+      notsure_firstthread = int.tryParse(o['notsure_firstthread'].toString());
     }
     if (o['ids_condition'] != null) {
       ids_condition = o['ids_condition'] as String;
@@ -231,20 +312,38 @@ class Tree {
     if (o['custom_condition'] != null) {
       custom_condition = o['custom_condition'] as String;
     }
+    if (o['notsure_ids_condition'] != null) {
+      notsure_ids_condition =
+          int.tryParse(o['notsure_ids_condition'].toString());
+    }
     if (o['id_surroundings'] != null) {
       id_surroundings = int.tryParse(o['id_surroundings'].toString());
+    }
+    if (o['notsure_id_surroundings'] != null) {
+      notsure_id_surroundings =
+          int.tryParse(o['notsure_id_surroundings'].toString());
     }
     if (o['ids_neighbours'] != null) {
       ids_neighbours = o['ids_neighbours'] as String;
     }
+    if (o['notsure_ids_neighbours'] != null) {
+      notsure_ids_neighbours =
+          int.tryParse(o['notsure_ids_neighbours'].toString());
+    }
     if (o['id_overall'] != null) {
       id_overall = int.tryParse(o['id_overall'].toString());
+    }
+    if (o['notsure_id_overall'] != null) {
+      notsure_id_overall = int.tryParse(o['notsure_id_overall'].toString());
     }
     if (o['images'] != null) {
       images = o['images'] as String;
     }
     if (o['height'] != null) {
       height = double.tryParse(o['height'].toString());
+    }
+    if (o['notsure_height'] != null) {
+      notsure_height = int.tryParse(o['notsure_height'].toString());
     }
     isDeleted = o['isDeleted'] != null
         ? o['isDeleted'] == 1 || o['isDeleted'] == true
@@ -259,21 +358,33 @@ class Tree {
   int id_user;
   int id_treetype;
   String custom_treetype;
+  int notsure_treetype;
   double longitude;
   double latitude;
   int is_alive;
+  int notsure_is_alive;
   int is_seedling;
+  int notsure_is_seedling;
   int diameter;
+  int notsure_diameter;
   int multibarrel;
+  int notsure_multibarrel;
   int id_state;
+  int notsure_id_state;
   int firstthread;
+  int notsure_firstthread;
   String ids_condition;
   String custom_condition;
+  int notsure_ids_condition;
   int id_surroundings;
+  int notsure_id_surroundings;
   String ids_neighbours;
+  int notsure_ids_neighbours;
   int id_overall;
+  int notsure_id_overall;
   String images;
   double height;
+  int notsure_height;
   bool isDeleted;
 
   BoolResult saveResult;
@@ -321,6 +432,10 @@ class Tree {
       map['custom_treetype'] = custom_treetype;
     }
 
+    if (notsure_treetype != null) {
+      map['notsure_treetype'] = notsure_treetype;
+    }
+
     if (longitude != null) {
       map['longitude'] = longitude;
     }
@@ -333,24 +448,48 @@ class Tree {
       map['is_alive'] = is_alive;
     }
 
+    if (notsure_is_alive != null) {
+      map['notsure_is_alive'] = notsure_is_alive;
+    }
+
     if (is_seedling != null) {
       map['is_seedling'] = is_seedling;
+    }
+
+    if (notsure_is_seedling != null) {
+      map['notsure_is_seedling'] = notsure_is_seedling;
     }
 
     if (diameter != null) {
       map['diameter'] = diameter;
     }
 
+    if (notsure_diameter != null) {
+      map['notsure_diameter'] = notsure_diameter;
+    }
+
     if (multibarrel != null) {
       map['multibarrel'] = multibarrel;
+    }
+
+    if (notsure_multibarrel != null) {
+      map['notsure_multibarrel'] = notsure_multibarrel;
     }
 
     if (id_state != null) {
       map['id_state'] = id_state;
     }
 
+    if (notsure_id_state != null) {
+      map['notsure_id_state'] = notsure_id_state;
+    }
+
     if (firstthread != null) {
       map['firstthread'] = firstthread;
+    }
+
+    if (notsure_firstthread != null) {
+      map['notsure_firstthread'] = notsure_firstthread;
     }
 
     if (ids_condition != null) {
@@ -361,16 +500,32 @@ class Tree {
       map['custom_condition'] = custom_condition;
     }
 
+    if (notsure_ids_condition != null) {
+      map['notsure_ids_condition'] = notsure_ids_condition;
+    }
+
     if (id_surroundings != null) {
       map['id_surroundings'] = id_surroundings;
+    }
+
+    if (notsure_id_surroundings != null) {
+      map['notsure_id_surroundings'] = notsure_id_surroundings;
     }
 
     if (ids_neighbours != null) {
       map['ids_neighbours'] = ids_neighbours;
     }
 
+    if (notsure_ids_neighbours != null) {
+      map['notsure_ids_neighbours'] = notsure_ids_neighbours;
+    }
+
     if (id_overall != null) {
       map['id_overall'] = id_overall;
+    }
+
+    if (notsure_id_overall != null) {
+      map['notsure_id_overall'] = notsure_id_overall;
     }
 
     if (images != null) {
@@ -379,6 +534,10 @@ class Tree {
 
     if (height != null) {
       map['height'] = height;
+    }
+
+    if (notsure_height != null) {
+      map['notsure_height'] = notsure_height;
     }
 
     if (isDeleted != null) {
@@ -424,6 +583,10 @@ class Tree {
       map['custom_treetype'] = custom_treetype;
     }
 
+    if (notsure_treetype != null) {
+      map['notsure_treetype'] = notsure_treetype;
+    }
+
     if (longitude != null) {
       map['longitude'] = longitude;
     }
@@ -436,24 +599,48 @@ class Tree {
       map['is_alive'] = is_alive;
     }
 
+    if (notsure_is_alive != null) {
+      map['notsure_is_alive'] = notsure_is_alive;
+    }
+
     if (is_seedling != null) {
       map['is_seedling'] = is_seedling;
+    }
+
+    if (notsure_is_seedling != null) {
+      map['notsure_is_seedling'] = notsure_is_seedling;
     }
 
     if (diameter != null) {
       map['diameter'] = diameter;
     }
 
+    if (notsure_diameter != null) {
+      map['notsure_diameter'] = notsure_diameter;
+    }
+
     if (multibarrel != null) {
       map['multibarrel'] = multibarrel;
+    }
+
+    if (notsure_multibarrel != null) {
+      map['notsure_multibarrel'] = notsure_multibarrel;
     }
 
     if (id_state != null) {
       map['id_state'] = id_state;
     }
 
+    if (notsure_id_state != null) {
+      map['notsure_id_state'] = notsure_id_state;
+    }
+
     if (firstthread != null) {
       map['firstthread'] = firstthread;
+    }
+
+    if (notsure_firstthread != null) {
+      map['notsure_firstthread'] = notsure_firstthread;
     }
 
     if (ids_condition != null) {
@@ -464,16 +651,32 @@ class Tree {
       map['custom_condition'] = custom_condition;
     }
 
+    if (notsure_ids_condition != null) {
+      map['notsure_ids_condition'] = notsure_ids_condition;
+    }
+
     if (id_surroundings != null) {
       map['id_surroundings'] = id_surroundings;
+    }
+
+    if (notsure_id_surroundings != null) {
+      map['notsure_id_surroundings'] = notsure_id_surroundings;
     }
 
     if (ids_neighbours != null) {
       map['ids_neighbours'] = ids_neighbours;
     }
 
+    if (notsure_ids_neighbours != null) {
+      map['notsure_ids_neighbours'] = notsure_ids_neighbours;
+    }
+
     if (id_overall != null) {
       map['id_overall'] = id_overall;
+    }
+
+    if (notsure_id_overall != null) {
+      map['notsure_id_overall'] = notsure_id_overall;
     }
 
     if (images != null) {
@@ -482,6 +685,10 @@ class Tree {
 
     if (height != null) {
       map['height'] = height;
+    }
+
+    if (notsure_height != null) {
+      map['notsure_height'] = notsure_height;
     }
 
     if (isDeleted != null) {
@@ -510,21 +717,33 @@ class Tree {
       id_user,
       id_treetype,
       custom_treetype,
+      notsure_treetype,
       longitude,
       latitude,
       is_alive,
+      notsure_is_alive,
       is_seedling,
+      notsure_is_seedling,
       diameter,
+      notsure_diameter,
       multibarrel,
+      notsure_multibarrel,
       id_state,
+      notsure_id_state,
       firstthread,
+      notsure_firstthread,
       ids_condition,
       custom_condition,
+      notsure_ids_condition,
       id_surroundings,
+      notsure_id_surroundings,
       ids_neighbours,
+      notsure_ids_neighbours,
       id_overall,
+      notsure_id_overall,
       images,
       height,
+      notsure_height,
       isDeleted
     ];
   }
@@ -539,21 +758,33 @@ class Tree {
       id_user,
       id_treetype,
       custom_treetype,
+      notsure_treetype,
       longitude,
       latitude,
       is_alive,
+      notsure_is_alive,
       is_seedling,
+      notsure_is_seedling,
       diameter,
+      notsure_diameter,
       multibarrel,
+      notsure_multibarrel,
       id_state,
+      notsure_id_state,
       firstthread,
+      notsure_firstthread,
       ids_condition,
       custom_condition,
+      notsure_ids_condition,
       id_surroundings,
+      notsure_id_surroundings,
       ids_neighbours,
+      notsure_ids_neighbours,
       id_overall,
+      notsure_id_overall,
       images,
       height,
+      notsure_height,
       isDeleted
     ];
   }
@@ -659,7 +890,7 @@ class Tree {
   ///
   /// Returns a <List<BoolResult>>
   Future<List<dynamic>> saveAll(List<Tree> trees) async {
-    // final results = _mnTree.saveAll('INSERT OR REPLACE INTO tree (id_tree,id_system, created, uploaded, is_deleted, id_user, id_treetype, custom_treetype, longitude, latitude, is_alive, is_seedling, diameter, multibarrel, id_state, firstthread, ids_condition, custom_condition, id_surroundings, ids_neighbours, id_overall, images, height,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',trees);
+    // final results = _mnTree.saveAll('INSERT OR REPLACE INTO tree (id_tree,id_system, created, uploaded, is_deleted, id_user, id_treetype, custom_treetype, notsure_treetype, longitude, latitude, is_alive, notsure_is_alive, is_seedling, notsure_is_seedling, diameter, notsure_diameter, multibarrel, notsure_multibarrel, id_state, notsure_id_state, firstthread, notsure_firstthread, ids_condition, custom_condition, notsure_ids_condition, id_surroundings, notsure_id_surroundings, ids_neighbours, notsure_ids_neighbours, id_overall, notsure_id_overall, images, height, notsure_height,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',trees);
     // return results; removed in sqfentity_gen 1.3.0+6
     CountreeStoreDbModel().batchStart();
     for (final obj in trees) {
@@ -674,7 +905,7 @@ class Tree {
   Future<int> upsert() async {
     try {
       if (await _mnTree.rawInsert(
-              'INSERT OR REPLACE INTO tree (id_tree,id_system, created, uploaded, is_deleted, id_user, id_treetype, custom_treetype, longitude, latitude, is_alive, is_seedling, diameter, multibarrel, id_state, firstthread, ids_condition, custom_condition, id_surroundings, ids_neighbours, id_overall, images, height,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+              'INSERT OR REPLACE INTO tree (id_tree,id_system, created, uploaded, is_deleted, id_user, id_treetype, custom_treetype, notsure_treetype, longitude, latitude, is_alive, notsure_is_alive, is_seedling, notsure_is_seedling, diameter, notsure_diameter, multibarrel, notsure_multibarrel, id_state, notsure_id_state, firstthread, notsure_firstthread, ids_condition, custom_condition, notsure_ids_condition, id_surroundings, notsure_id_surroundings, ids_neighbours, notsure_ids_neighbours, id_overall, notsure_id_overall, images, height, notsure_height,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
               [
                 id_tree,
                 id_system,
@@ -684,21 +915,33 @@ class Tree {
                 id_user,
                 id_treetype,
                 custom_treetype,
+                notsure_treetype,
                 longitude,
                 latitude,
                 is_alive,
+                notsure_is_alive,
                 is_seedling,
+                notsure_is_seedling,
                 diameter,
+                notsure_diameter,
                 multibarrel,
+                notsure_multibarrel,
                 id_state,
+                notsure_id_state,
                 firstthread,
+                notsure_firstthread,
                 ids_condition,
                 custom_condition,
+                notsure_ids_condition,
                 id_surroundings,
+                notsure_id_surroundings,
                 ids_neighbours,
+                notsure_ids_neighbours,
                 id_overall,
+                notsure_id_overall,
                 images,
                 height,
+                notsure_height,
                 isDeleted
               ]) ==
           1) {
@@ -726,7 +969,7 @@ class Tree {
   /// Returns a BoolCommitResult
   Future<BoolCommitResult> upsertAll(List<Tree> trees) async {
     final results = await _mnTree.rawInsertAll(
-        'INSERT OR REPLACE INTO tree (id_tree,id_system, created, uploaded, is_deleted, id_user, id_treetype, custom_treetype, longitude, latitude, is_alive, is_seedling, diameter, multibarrel, id_state, firstthread, ids_condition, custom_condition, id_surroundings, ids_neighbours, id_overall, images, height,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        'INSERT OR REPLACE INTO tree (id_tree,id_system, created, uploaded, is_deleted, id_user, id_treetype, custom_treetype, notsure_treetype, longitude, latitude, is_alive, notsure_is_alive, is_seedling, notsure_is_seedling, diameter, notsure_diameter, multibarrel, notsure_multibarrel, id_state, notsure_id_state, firstthread, notsure_firstthread, ids_condition, custom_condition, notsure_ids_condition, id_surroundings, notsure_id_surroundings, ids_neighbours, notsure_ids_neighbours, id_overall, notsure_id_overall, images, height, notsure_height,isDeleted)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         trees);
     return results;
   }
@@ -776,10 +1019,22 @@ class Tree {
     id_system = id_system ?? 0;
     uploaded = uploaded ?? 0;
     is_deleted = is_deleted ?? 0;
+    notsure_treetype = notsure_treetype ?? 0;
     is_alive = is_alive ?? 0;
+    notsure_is_alive = notsure_is_alive ?? 0;
     is_seedling = is_seedling ?? 0;
+    notsure_is_seedling = notsure_is_seedling ?? 0;
     diameter = diameter ?? 0;
+    notsure_diameter = notsure_diameter ?? 0;
     multibarrel = multibarrel ?? 0;
+    notsure_multibarrel = notsure_multibarrel ?? 0;
+    notsure_id_state = notsure_id_state ?? 0;
+    notsure_firstthread = notsure_firstthread ?? 0;
+    notsure_ids_condition = notsure_ids_condition ?? 0;
+    notsure_id_surroundings = notsure_id_surroundings ?? 0;
+    notsure_ids_neighbours = notsure_ids_neighbours ?? 0;
+    notsure_id_overall = notsure_id_overall ?? 0;
+    notsure_height = notsure_height ?? 0;
     isDeleted = isDeleted ?? false;
   }
   // END METHODS
@@ -1208,6 +1463,12 @@ class TreeFilterBuilder extends SearchCriteria {
         setField(_custom_treetype, 'custom_treetype', DbType.text);
   }
 
+  TreeField _notsure_treetype;
+  TreeField get notsure_treetype {
+    return _notsure_treetype =
+        setField(_notsure_treetype, 'notsure_treetype', DbType.integer);
+  }
+
   TreeField _longitude;
   TreeField get longitude {
     return _longitude = setField(_longitude, 'longitude', DbType.real);
@@ -1223,9 +1484,21 @@ class TreeFilterBuilder extends SearchCriteria {
     return _is_alive = setField(_is_alive, 'is_alive', DbType.integer);
   }
 
+  TreeField _notsure_is_alive;
+  TreeField get notsure_is_alive {
+    return _notsure_is_alive =
+        setField(_notsure_is_alive, 'notsure_is_alive', DbType.integer);
+  }
+
   TreeField _is_seedling;
   TreeField get is_seedling {
     return _is_seedling = setField(_is_seedling, 'is_seedling', DbType.integer);
+  }
+
+  TreeField _notsure_is_seedling;
+  TreeField get notsure_is_seedling {
+    return _notsure_is_seedling =
+        setField(_notsure_is_seedling, 'notsure_is_seedling', DbType.integer);
   }
 
   TreeField _diameter;
@@ -1233,9 +1506,21 @@ class TreeFilterBuilder extends SearchCriteria {
     return _diameter = setField(_diameter, 'diameter', DbType.integer);
   }
 
+  TreeField _notsure_diameter;
+  TreeField get notsure_diameter {
+    return _notsure_diameter =
+        setField(_notsure_diameter, 'notsure_diameter', DbType.integer);
+  }
+
   TreeField _multibarrel;
   TreeField get multibarrel {
     return _multibarrel = setField(_multibarrel, 'multibarrel', DbType.integer);
+  }
+
+  TreeField _notsure_multibarrel;
+  TreeField get notsure_multibarrel {
+    return _notsure_multibarrel =
+        setField(_notsure_multibarrel, 'notsure_multibarrel', DbType.integer);
   }
 
   TreeField _id_state;
@@ -1243,9 +1528,21 @@ class TreeFilterBuilder extends SearchCriteria {
     return _id_state = setField(_id_state, 'id_state', DbType.integer);
   }
 
+  TreeField _notsure_id_state;
+  TreeField get notsure_id_state {
+    return _notsure_id_state =
+        setField(_notsure_id_state, 'notsure_id_state', DbType.integer);
+  }
+
   TreeField _firstthread;
   TreeField get firstthread {
     return _firstthread = setField(_firstthread, 'firstthread', DbType.integer);
+  }
+
+  TreeField _notsure_firstthread;
+  TreeField get notsure_firstthread {
+    return _notsure_firstthread =
+        setField(_notsure_firstthread, 'notsure_firstthread', DbType.integer);
   }
 
   TreeField _ids_condition;
@@ -1260,10 +1557,22 @@ class TreeFilterBuilder extends SearchCriteria {
         setField(_custom_condition, 'custom_condition', DbType.text);
   }
 
+  TreeField _notsure_ids_condition;
+  TreeField get notsure_ids_condition {
+    return _notsure_ids_condition = setField(
+        _notsure_ids_condition, 'notsure_ids_condition', DbType.integer);
+  }
+
   TreeField _id_surroundings;
   TreeField get id_surroundings {
     return _id_surroundings =
         setField(_id_surroundings, 'id_surroundings', DbType.integer);
+  }
+
+  TreeField _notsure_id_surroundings;
+  TreeField get notsure_id_surroundings {
+    return _notsure_id_surroundings = setField(
+        _notsure_id_surroundings, 'notsure_id_surroundings', DbType.integer);
   }
 
   TreeField _ids_neighbours;
@@ -1272,9 +1581,21 @@ class TreeFilterBuilder extends SearchCriteria {
         setField(_ids_neighbours, 'ids_neighbours', DbType.text);
   }
 
+  TreeField _notsure_ids_neighbours;
+  TreeField get notsure_ids_neighbours {
+    return _notsure_ids_neighbours = setField(
+        _notsure_ids_neighbours, 'notsure_ids_neighbours', DbType.integer);
+  }
+
   TreeField _id_overall;
   TreeField get id_overall {
     return _id_overall = setField(_id_overall, 'id_overall', DbType.integer);
+  }
+
+  TreeField _notsure_id_overall;
+  TreeField get notsure_id_overall {
+    return _notsure_id_overall =
+        setField(_notsure_id_overall, 'notsure_id_overall', DbType.integer);
   }
 
   TreeField _images;
@@ -1285,6 +1606,12 @@ class TreeFilterBuilder extends SearchCriteria {
   TreeField _height;
   TreeField get height {
     return _height = setField(_height, 'height', DbType.real);
+  }
+
+  TreeField _notsure_height;
+  TreeField get notsure_height {
+    return _notsure_height =
+        setField(_notsure_height, 'notsure_height', DbType.integer);
   }
 
   TreeField _isDeleted;
@@ -1621,6 +1948,13 @@ class TreeFields {
         SqlSyntax.setField(_fCustom_treetype, 'custom_treetype', DbType.text);
   }
 
+  static TableField _fNotsure_treetype;
+  static TableField get notsure_treetype {
+    return _fNotsure_treetype = _fNotsure_treetype ??
+        SqlSyntax.setField(
+            _fNotsure_treetype, 'notsure_treetype', DbType.integer);
+  }
+
   static TableField _fLongitude;
   static TableField get longitude {
     return _fLongitude = _fLongitude ??
@@ -1639,10 +1973,24 @@ class TreeFields {
         SqlSyntax.setField(_fIs_alive, 'is_alive', DbType.integer);
   }
 
+  static TableField _fNotsure_is_alive;
+  static TableField get notsure_is_alive {
+    return _fNotsure_is_alive = _fNotsure_is_alive ??
+        SqlSyntax.setField(
+            _fNotsure_is_alive, 'notsure_is_alive', DbType.integer);
+  }
+
   static TableField _fIs_seedling;
   static TableField get is_seedling {
     return _fIs_seedling = _fIs_seedling ??
         SqlSyntax.setField(_fIs_seedling, 'is_seedling', DbType.integer);
+  }
+
+  static TableField _fNotsure_is_seedling;
+  static TableField get notsure_is_seedling {
+    return _fNotsure_is_seedling = _fNotsure_is_seedling ??
+        SqlSyntax.setField(
+            _fNotsure_is_seedling, 'notsure_is_seedling', DbType.integer);
   }
 
   static TableField _fDiameter;
@@ -1651,10 +1999,24 @@ class TreeFields {
         SqlSyntax.setField(_fDiameter, 'diameter', DbType.integer);
   }
 
+  static TableField _fNotsure_diameter;
+  static TableField get notsure_diameter {
+    return _fNotsure_diameter = _fNotsure_diameter ??
+        SqlSyntax.setField(
+            _fNotsure_diameter, 'notsure_diameter', DbType.integer);
+  }
+
   static TableField _fMultibarrel;
   static TableField get multibarrel {
     return _fMultibarrel = _fMultibarrel ??
         SqlSyntax.setField(_fMultibarrel, 'multibarrel', DbType.integer);
+  }
+
+  static TableField _fNotsure_multibarrel;
+  static TableField get notsure_multibarrel {
+    return _fNotsure_multibarrel = _fNotsure_multibarrel ??
+        SqlSyntax.setField(
+            _fNotsure_multibarrel, 'notsure_multibarrel', DbType.integer);
   }
 
   static TableField _fId_state;
@@ -1663,10 +2025,24 @@ class TreeFields {
         SqlSyntax.setField(_fId_state, 'id_state', DbType.integer);
   }
 
+  static TableField _fNotsure_id_state;
+  static TableField get notsure_id_state {
+    return _fNotsure_id_state = _fNotsure_id_state ??
+        SqlSyntax.setField(
+            _fNotsure_id_state, 'notsure_id_state', DbType.integer);
+  }
+
   static TableField _fFirstthread;
   static TableField get firstthread {
     return _fFirstthread = _fFirstthread ??
         SqlSyntax.setField(_fFirstthread, 'firstthread', DbType.integer);
+  }
+
+  static TableField _fNotsure_firstthread;
+  static TableField get notsure_firstthread {
+    return _fNotsure_firstthread = _fNotsure_firstthread ??
+        SqlSyntax.setField(
+            _fNotsure_firstthread, 'notsure_firstthread', DbType.integer);
   }
 
   static TableField _fIds_condition;
@@ -1681,11 +2057,25 @@ class TreeFields {
         SqlSyntax.setField(_fCustom_condition, 'custom_condition', DbType.text);
   }
 
+  static TableField _fNotsure_ids_condition;
+  static TableField get notsure_ids_condition {
+    return _fNotsure_ids_condition = _fNotsure_ids_condition ??
+        SqlSyntax.setField(
+            _fNotsure_ids_condition, 'notsure_ids_condition', DbType.integer);
+  }
+
   static TableField _fId_surroundings;
   static TableField get id_surroundings {
     return _fId_surroundings = _fId_surroundings ??
         SqlSyntax.setField(
             _fId_surroundings, 'id_surroundings', DbType.integer);
+  }
+
+  static TableField _fNotsure_id_surroundings;
+  static TableField get notsure_id_surroundings {
+    return _fNotsure_id_surroundings = _fNotsure_id_surroundings ??
+        SqlSyntax.setField(_fNotsure_id_surroundings, 'notsure_id_surroundings',
+            DbType.integer);
   }
 
   static TableField _fIds_neighbours;
@@ -1694,10 +2084,24 @@ class TreeFields {
         SqlSyntax.setField(_fIds_neighbours, 'ids_neighbours', DbType.text);
   }
 
+  static TableField _fNotsure_ids_neighbours;
+  static TableField get notsure_ids_neighbours {
+    return _fNotsure_ids_neighbours = _fNotsure_ids_neighbours ??
+        SqlSyntax.setField(
+            _fNotsure_ids_neighbours, 'notsure_ids_neighbours', DbType.integer);
+  }
+
   static TableField _fId_overall;
   static TableField get id_overall {
     return _fId_overall = _fId_overall ??
         SqlSyntax.setField(_fId_overall, 'id_overall', DbType.integer);
+  }
+
+  static TableField _fNotsure_id_overall;
+  static TableField get notsure_id_overall {
+    return _fNotsure_id_overall = _fNotsure_id_overall ??
+        SqlSyntax.setField(
+            _fNotsure_id_overall, 'notsure_id_overall', DbType.integer);
   }
 
   static TableField _fImages;
@@ -1710,6 +2114,12 @@ class TreeFields {
   static TableField get height {
     return _fHeight =
         _fHeight ?? SqlSyntax.setField(_fHeight, 'height', DbType.real);
+  }
+
+  static TableField _fNotsure_height;
+  static TableField get notsure_height {
+    return _fNotsure_height = _fNotsure_height ??
+        SqlSyntax.setField(_fNotsure_height, 'notsure_height', DbType.integer);
   }
 
   static TableField _fIsDeleted;

@@ -22,24 +22,46 @@ const tableTree = SqfEntityTable(
 
     SqfEntityField('id_treetype', DbType.integer),
     SqfEntityField('custom_treetype', DbType.text),
+    SqfEntityField('notsure_treetype', DbType.integer, defaultValue: 0),
+
     SqfEntityField('longitude', DbType.real),
     SqfEntityField('latitude', DbType.real),
 
     SqfEntityField('is_alive', DbType.integer, defaultValue: 0), // is_dead actually
+    SqfEntityField('notsure_is_alive', DbType.integer, defaultValue: 0),
+
     SqfEntityField('is_seedling', DbType.integer, defaultValue: 0),
+    SqfEntityField('notsure_is_seedling', DbType.integer, defaultValue: 0),
 
     SqfEntityField('diameter', DbType.integer, defaultValue: 0), // perimeter actaully
+    SqfEntityField('notsure_diameter', DbType.integer, defaultValue: 0),
+
     SqfEntityField('multibarrel', DbType.integer, defaultValue: 0),
+    SqfEntityField('notsure_multibarrel', DbType.integer, defaultValue: 0),
 
     SqfEntityField('id_state', DbType.integer), // крона
+    SqfEntityField('notsure_id_state', DbType.integer, defaultValue: 0),
+
     SqfEntityField('firstthread', DbType.integer), // высота первой ветви
+    SqfEntityField('notsure_firstthread', DbType.integer, defaultValue: 0),
+
     SqfEntityField('ids_condition', DbType.text), // состояние дерева
     SqfEntityField('custom_condition', DbType.text),
+    SqfEntityField('notsure_ids_condition', DbType.integer, defaultValue: 0),
+
     SqfEntityField('id_surroundings', DbType.integer), // условия роста    
+    SqfEntityField('notsure_id_surroundings', DbType.integer, defaultValue: 0),
+
     SqfEntityField('ids_neighbours', DbType.text), // окружение    
+    SqfEntityField('notsure_ids_neighbours', DbType.integer, defaultValue: 0),
+
     SqfEntityField('id_overall', DbType.integer), // общая оценка    
+    SqfEntityField('notsure_id_overall', DbType.integer, defaultValue: 0),
+
     SqfEntityField('images', DbType.text),
+
     SqfEntityField('height', DbType.real),
+    SqfEntityField('notsure_height', DbType.integer, defaultValue: 0),
   ]
 );
 

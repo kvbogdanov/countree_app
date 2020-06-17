@@ -18,6 +18,7 @@ import 'package:countree/model/tree.dart' as Dbtree;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:image/image.dart' as LocalImage;
+import 'package:progress_dialog/progress_dialog.dart';
 
 const MAXZOOM = 20.0;
 
@@ -39,6 +40,8 @@ class TreeformPageState extends State<TreeformPage>{
   bool visSeedling = true;
   bool visCustomType = false;
   bool visCustomCondition = false;
+
+  int args;
 
   _getCurrentCity() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -170,12 +173,30 @@ class TreeformPageState extends State<TreeformPage>{
         });
     });
     
+
+  
     _getCurrentLocation().then((result){
       mapController.move(result, zoomLevel);
       currentPoint = result;
       _handleTap(currentPoint);
     });
 
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => { 
+        _getTreeByTime(args).then((result){
+          if(result != null)
+            _loadFormWithTree(result, setpos: true);
+        })
+    });
+
+  }
+
+  Future<Dbtree.Tree> _getTreeByTime(int timestamp) async
+  {
+    if(timestamp==null)
+      return null;
+    final tree = await Dbtree.Tree().select().where('created=$timestamp').toSingle();
+    return tree;
   }
 
   Future<bool> _onWillPop() async {
@@ -227,9 +248,10 @@ class TreeformPageState extends State<TreeformPage>{
     return errors;
   }
 
-  Future<bool> saveTreeLocal() async
+  Future<Dbtree.Tree> saveTreeLocal() async
   {
     final treeInfo = _fbKey.currentState.value;
+    var res = 0;
 
     if(treeInfo['isalive']==true)
     {
@@ -245,7 +267,7 @@ class TreeformPageState extends State<TreeformPage>{
         notsure_is_alive: notSure['isalive']==true?1:0,
       );
       var res = await ctree.save();
-      return res>0;
+      return res>0?ctree:null;
     }
     else if(treeInfo['isseedling']==true)
     {
@@ -263,7 +285,7 @@ class TreeformPageState extends State<TreeformPage>{
         notsure_is_seedling: notSure['isseedling']==true?1:0,
       ); 
       var res = await ctree.save();
-      return res>0;           
+      return res>0?ctree:null;           
     }
     else
     {
@@ -304,12 +326,57 @@ class TreeformPageState extends State<TreeformPage>{
         height: treeInfo['height'], //double.parse(treeInfo['height']),
         images: imagePaths.join(";")
       ); //.save();
-      var res = await ctree.save();
-      return res>0;
 
-    };
+      
+      if(args!=null)
+      {
+        var targetTree = await _getTreeByTime(args);
+        if(targetTree!=null)
+        {
+          targetTree.uploaded = 0;
+          targetTree.id_user = ctree.id_user;
+          targetTree.id_treetype = ctree.id_treetype;
+          targetTree.custom_treetype = ctree.custom_treetype;
+          targetTree.notsure_treetype = ctree.notsure_treetype;
+          targetTree.longitude = ctree.longitude;
+          targetTree.latitude = ctree.latitude;
+          targetTree.is_alive = ctree.is_alive;
+          targetTree.notsure_is_alive = ctree.notsure_is_alive;
+          targetTree.is_seedling = ctree.is_seedling;
+          targetTree.notsure_is_seedling = ctree.notsure_is_seedling;
+          targetTree.diameter = ctree.diameter;
+          targetTree.notsure_diameter = ctree.notsure_diameter;
+          targetTree.multibarrel = ctree.multibarrel;
+          targetTree.notsure_multibarrel = ctree.notsure_multibarrel;
+          targetTree.id_state = ctree.id_state;
+          targetTree.notsure_id_state = ctree.notsure_id_state;
+          targetTree.firstthread = ctree.firstthread;
+          targetTree.notsure_firstthread = ctree.notsure_firstthread;
+          targetTree.ids_condition = ctree.ids_condition;
+          targetTree.custom_condition = ctree.custom_condition;
+          targetTree.notsure_ids_condition = ctree.notsure_ids_condition;
+          targetTree.id_surroundings = ctree.id_surroundings;
+          targetTree.notsure_id_surroundings = ctree.notsure_id_surroundings;
+          targetTree.ids_neighbours = ctree.ids_neighbours;
+          targetTree.notsure_ids_neighbours = ctree.notsure_ids_neighbours;
+          targetTree.id_overall = ctree.id_overall;
+          targetTree.height = ctree.height;
+          targetTree.images = ctree.images;
 
-    return false;
+          targetTree.created = ctree.created;
+
+          var res = await targetTree.save();
+          return res>0?ctree:targetTree;
+        }
+      }
+      else
+      {
+        var res = await ctree.save();
+        return res>0?ctree:null;
+      }
+
+    }
+    //return false;
   }
 
   Future<bool> _rememberMapPosition() async
@@ -321,8 +388,104 @@ class TreeformPageState extends State<TreeformPage>{
     return true;
   }
 
+  Future<bool> _copyPervTree() async
+  {
+    final lastTree = await Dbtree.Tree().select().orderByDesc('created').toSingle();
+
+    if(lastTree != null)
+      _loadFormWithTree(lastTree);
+    else
+      return false;
+    
+    return true;
+  }
+
+  _loadFormWithTree(Dbtree.Tree tree, {setpos: false})
+  {
+    setState(() {
+        if(setpos==true)
+        {
+          currentPoint = new LatLng(tree.latitude, tree.longitude);
+          mapController.move(currentPoint, zoomLevel);
+        }
+
+        // биологический вид
+        final idTreetype = tree.id_treetype;
+        _fbKey.currentState.fields['treetype'].currentState.didChange(TreeTypeList.getById(idTreetype).name);
+        visCustomType = (idTreetype == 99);
+        notSure['treetype'] = (tree.notsure_treetype==1);
+
+        // сухое дерево
+        _fbKey.currentState.fields['isalive'].currentState.didChange(tree.is_alive==1);
+        visRegular = (tree.is_alive==0);
+        visSeedling = (tree.is_seedling==0);
+        notSure['isalive'] = (tree.notsure_is_alive==1);
+
+        // малое насаждение
+        _fbKey.currentState.fields['isseedling'].currentState.didChange(tree.is_seedling==1);
+        visRegular = (tree.is_seedling==0);
+        notSure['isseedling'] = (tree.notsure_is_seedling==1);
+
+        // обхват ствола
+        _fbKey.currentState.fields['diameter'].currentState.didChange(tree.diameter.toString());
+        notSure['diameter'] = (tree.notsure_diameter==1);
+
+        // крона у дерева
+        _fbKey.currentState.fields['state'].currentState.didChange(tree.id_state);
+        notSure['state'] = (tree.notsure_id_state==1);
+
+        // высота первой ветви
+        _fbKey.currentState.fields['firstthread'].currentState.didChange(tree.firstthread);
+        notSure['firstthread'] = (tree.notsure_firstthread==1);
+
+        // состояние  дерева
+        var condList = tree.ids_condition.split(','); //.map(int.parse).toList();
+        if(condList.isEmpty!=true)
+        {
+          final condListIds = tree.ids_condition.split(',').toList();
+          _fbKey.currentState.fields['condition'].currentState.didChange(condListIds);
+        }
+        notSure['condition'] = (tree.notsure_ids_condition==1);
+
+        // условия роста
+        _fbKey.currentState.fields['surroundings'].currentState.didChange(tree.id_surroundings);
+        notSure['surroundings'] = (tree.notsure_id_surroundings==1);
+
+        // окружение  дерева
+        var neibList = tree.ids_neighbours.split(','); //.map(int.parse).toList();
+        if(neibList.isEmpty!=true)
+        {
+          final neibListIds = tree.ids_neighbours.split(',').toList();
+          _fbKey.currentState.fields['neighbours'].currentState.didChange(neibListIds);
+        }
+        notSure['neighbours'] = (tree.notsure_ids_neighbours==1);
+        
+        // общая оценка
+        _fbKey.currentState.fields['overall'].currentState.didChange(tree.id_overall);
+        notSure['overall'] = (tree.notsure_id_overall==1);        
+
+        // высота первой ветви
+        _fbKey.currentState.fields['height'].currentState.didChange(tree.height);
+        notSure['height'] = (tree.notsure_firstthread==1);
+
+        if(tree.is_alive==0 && tree.is_seedling==0)
+        {
+          // изображения
+          final imagePathList = tree.images.split(";");
+          List<File> imagesList = [];        
+          for(var imgpath in imagePathList)
+          {
+            imagesList.add(new File(imgpath));
+          }
+          _fbKey.currentState.fields['treeimages'].currentState.didChange(imagesList);
+        }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    args = ModalRoute.of(context).settings.arguments;
+
     var markers = [currentPoint].map((latlng) {
       return Marker(
         width: 50.0,
@@ -529,6 +692,7 @@ class TreeformPageState extends State<TreeformPage>{
                                           ],
                                         ),
                                     ),
+                                    /*
                                     SizedBox(height: 15),
                                     RaisedButton(
                                       shape: RoundedRectangleBorder(
@@ -544,6 +708,7 @@ class TreeformPageState extends State<TreeformPage>{
                                       child: Text('Определитель',
                                         style: TextStyle(fontSize: 14)),
                                     ), 
+                                    */
                                     SizedBox(height: 15),
     // Сухое дерево                                
                                     Row(
@@ -1676,10 +1841,10 @@ class TreeformPageState extends State<TreeformPage>{
                           child:
                             RaisedButton(
                               color: Colors.deepOrangeAccent,
-                              child: Text("Сохранить и отправить", style: TextStyle(fontSize: 16, color: Colors.white)),
+                              child: args==null?Text("Сохранить и отправить", style: TextStyle(fontSize: 16, color: Colors.white)):Text("Сохранить изменения", style: TextStyle(fontSize: 16, color: Colors.white)),
                               onPressed: () async {
                                 if (_fbKey.currentState.saveAndValidate()) {
-                                  print(_fbKey.currentState.value);
+                                  //print(_fbKey.currentState.value);
                                   final errors = validateTree(); 
 
                                   if(errors.length == 0)
@@ -1695,34 +1860,67 @@ class TreeformPageState extends State<TreeformPage>{
                                     new File('$localDocPath/thumbnail-test.jpg')
                                       ..writeAsBytesSync(LocalImage.encodeJpg(thumbnail));                                  
                                     */
-                                    saveTreeLocal().then((value) {
+                                    final ProgressDialog pr = ProgressDialog(context);
+                                    pr.style(message: 'Отправка данных...');
+                                    await pr.show();
+
+                                    final localSaveRes = await saveTreeLocal();
+
+                                    if(localSaveRes != null)
+                                    {
+                                      final remoteSaveRes = await Tree.sendToServer(localSaveRes); 
+                                      final resultMessage = remoteSaveRes==0?'Сохранить на сервере не удалось, информация сохранена локально.':'Информация о дереве сохранена';
+
+                                      //saveTreeLocal().then((value) async {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => new AlertDialog(
+                                            title: new Text(resultMessage),
+                                            content: new Text('Вы можете добавить ещё одно дерево или вернуться к карте'),
+                                            actions: <Widget>[
+                                              new FlatButton(
+                                                child: new Text('На карту', style: TextStyle(fontSize: 20)),
+                                                onPressed: () async {
+                                                  await _rememberMapPosition();
+                                                  Navigator.of(context).pop(true);
+                                                  Navigator.of(context).pop(true);
+                                                  Navigator.of(context).pop(true);
+                                                  if(args!=null)
+                                                    Navigator.of(context).pop(true);
+                                                  //Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+                                                }
+                                              ),
+                                              new FlatButton(
+                                                child: new Text('Ещё дерево', style: TextStyle(fontSize: 20, color: Colors.red)),
+                                                onPressed: () async {
+                                                  await _rememberMapPosition();
+                                                  Navigator.of(context).pop(true);
+                                                  Navigator.of(context).pop(true);
+                                                  Navigator.pushNamed(context, TreeformPage.route); //Navigator.pushNamedAndRemoveUntil(context, "treeform", (r) => false),
+                                                }
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      //});                                      
+                                    }
+                                    else
                                       showDialog(
                                         context: context,
                                         builder: (context) => new AlertDialog(
-                                          title: new Text('Информация о дереве сохранена'),
-                                          content: new Text('Вы можете добавить ещё одно дерево или вернуться к карте'),
+                                          title: new Text('Произошла ошибка при сохранениии'),
+                                          content: new Text('Не удалось сохранить информацию о дереве на устройстве'),
                                           actions: <Widget>[
                                             new FlatButton(
-                                              child: new Text('На карту', style: TextStyle(fontSize: 20)),
-                                              onPressed: () async {
-                                                await _rememberMapPosition();
-                                                Navigator.of(context).pop(true);
-                                                Navigator.of(context).pop(true);
-                                              }
-                                            ),
-                                            new FlatButton(
-                                              child: new Text('Ещё дерево', style: TextStyle(fontSize: 20, color: Colors.red)),
-                                              onPressed: () async {
-                                                await _rememberMapPosition();
-                                                Navigator.of(context).pop(true);
-                                                Navigator.of(context).pop(true);
-                                                Navigator.pushNamed(context, TreeformPage.route); //Navigator.pushNamedAndRemoveUntil(context, "treeform", (r) => false),
+                                              child: new Text('Понятно'),
+                                              onPressed: () => {
+                                                Navigator.of(context).pop(),
                                               }
                                             ),
                                           ],
                                         ),
-                                      );
-                                    });
+                                      );                                    
+                                    
                                   }
                                   else
                                   {
@@ -1776,8 +1974,9 @@ class TreeformPageState extends State<TreeformPage>{
                             ),
                             new FlatButton(
                               onPressed: () async {
-                                final last = await Dbtree.Tree().select().orderByDesc('created').toSingle();
-                                print(last.created);
+                                await _copyPervTree();
+                                //final last = await Dbtree.Tree().select().orderByDesc('created').toSingle();
+                                //print(last.created);
                                 Navigator.of(context).pop(false);
                               },
                               child: new Text('Скопировать', style: TextStyle(fontSize: 20, color: Colors.red)),

@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:latlong/latlong.dart';
+import 'package:dio/dio.dart';
+import 'package:countree/model/tree.dart' as Dbtree;
+
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:image/image.dart' as LocalImage;
+
 
 class TreeType {
   final int id;
@@ -139,4 +146,58 @@ class Tree{
   List<Image> images;
 
   int saveDate;
+
+  static Future<int> sendToServer(Dbtree.Tree tree, {uri = 'https://24.countree.ru'}) async
+  {
+    final savePath = '/mobile/addtree';
+    BaseOptions options = BaseOptions(
+      baseUrl: uri,
+      responseType: ResponseType.plain,
+      connectTimeout: 30000,
+      receiveTimeout: 30000,
+      validateStatus: (code) {
+        if (code >= 200) {
+          return true;
+        }
+        return false;
+      });
+
+    Dio dio = Dio(options);
+
+    List<String> filepaths = tree.images.split(';');
+    List<MultipartFile> files = [];
+    final directory = await  getApplicationDocumentsDirectory();
+    final localDocPath = directory.path;
+
+    for (var i = 0; i < filepaths.length; i++) {
+
+      final curImage = new File(filepaths[i]);
+      final fileExtension = filepaths[i].split(".").last;
+      LocalImage.Image imageOrig = LocalImage.decodeImage(curImage.readAsBytesSync());
+      LocalImage.Image imageResized = LocalImage.copyResize(imageOrig, width: 1290); 
+      new File('$localDocPath/picresized$i.$fileExtension')
+        ..writeAsBytesSync(LocalImage.encodeJpg(imageResized));   
+
+      files.add(await MultipartFile.fromFile(filepaths[i], filename: "picture$i.$fileExtension"));
+    } 
+    
+    Map<String,dynamic> data = tree.toMap();
+    data['files'] = files;
+
+    FormData formData = new FormData.fromMap(data);
+    var response = await dio.post(savePath, data: formData);
+    debugPrint(response.toString());
+
+    if(int.parse(response.toString()) != 0)
+    {
+      tree.id_system = int.parse(response.toString());
+      tree.uploaded = new DateTime.now().millisecondsSinceEpoch;
+      tree.save();
+
+      return tree.id_system;
+    }
+
+    return 0;
+  }
+
 }

@@ -38,11 +38,6 @@ class ViewPageState extends State<ViewPage>{
   var imagesWidgets = List<Widget>();
   var pics = List<String>();
 
-  final List<String> picsTest = [
-    "https://24.countree.ru/assets/preview/28/03/2803c3acac8e270614534a9a472a3516.jpg",
-    "https://24.countree.ru/assets/preview/21/fa/21fa6170d200fb2758928b126978488b.jpg"   
-  ];
-
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return (prefs.getBool('logged') ?? false);
@@ -325,7 +320,9 @@ class ViewPageState extends State<ViewPage>{
       key: _scaffoldKey,
       appBar: AppBar(title: Text('#24-'+args.toString())),
       endDrawer: buildDrawer(context, ViewPage.route, signed:signed),
-      body: treeinfoWidget(args.toString())
+      body: SingleChildScrollView(
+        child: treeinfoWidget(args.toString())
+      )
     );
   }
 

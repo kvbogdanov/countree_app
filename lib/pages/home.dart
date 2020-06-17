@@ -136,7 +136,7 @@ class HomePageState extends State<HomePage>{
       {
         await prefs.setInt('currentCity', ccounter);
         mapController.move(city.center, 16.0);
-        _loadPoints(city.uri);    
+        await _loadPointsFast(city.uri);    
         break;
       }
       ccounter++;
@@ -386,13 +386,16 @@ class HomePageState extends State<HomePage>{
 
     mapController = MapController();
     currentCity = CountreeCities.cities[0];
+
     _getCurrentCity().then((result){
         setState(() {
           currentCity = result;
           mapController.move(currentCity.center, 16.0); 
           dropdownValue = currentCity.name;
+          
 
           if(markers.length == 0)
+
             _loadPointsFast(currentCity.uri).then((result){
               setState(() {
                 totalTrees = markers.length;                  
@@ -440,11 +443,12 @@ class HomePageState extends State<HomePage>{
     _getMapLayer().then((result){
         setState(() {});
     });
+
   }
 
   @override
   Widget build(BuildContext context) {
-  
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(title: Text('Countree')),
@@ -574,31 +578,28 @@ class HomePageState extends State<HomePage>{
                   zoom: 16.0,
                   maxZoom: MAXZOOM,
                   onTap: (point) {
-                    print('tap');
                     setState((){
                       zoomLevel =  mapController.zoom;
                     });
                   },
                   onPositionChanged: (p1, p2) {
-                    /*
                     if(markers.length>0)
                       setState((){
-                        var prevZl = zoomLevel.round();
+                        //var prevZl = zoomLevel.round();
                         zoomLevel = mapController.zoom;
 
-                        if(zoomLevel.round()==18 && prevZl<zoomLevel)
+                        if(zoomLevel.round()>17.99 && mainLayers.last == clusteredLO)
                         {
+                        
                           mainLayers.removeLast();
                           mainLayers.add(nonClusteredLO);
                         }
-                        else if(zoomLevel.round()==18 && prevZl>zoomLevel)
+                        else if(zoomLevel.round()<17.99 && mainLayers.last == nonClusteredLO)
                         {
                           mainLayers.removeLast();
                           mainLayers.add(clusteredLO);
                         }                                         
                       });
-                    print(mapController.zoom);
-                    */
                   },
                   plugins: [
                     //ZoomButtonsPlugin(),

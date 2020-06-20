@@ -1,4 +1,4 @@
-package com.example.countree
+package ru.countree.beta
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

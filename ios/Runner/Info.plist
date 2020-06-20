@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to photos.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs access to camera.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
@@ -19,17 +15,31 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to camera to take a trees photo.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>This app needs access to location when open.</string>
+	<string>This app needs access to location when open so you can fine set position of the tree.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location when open.</string>
+	<string>This app needs access to location when open so you can fine set position of the tree.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photos of the trees you previously made.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This app needs access to contacts to share your results if you want.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>This app needs access to calenar to properly set the dates of user activity in project.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>This app needs access to Apple Music to get your music preferences during making trees inventory.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>This app needs access to motion usage to perfectly set tree positioning.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app needs access to speech recognition to give you option to make photos without pushing a button.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -178,7 +178,8 @@ class Tree{
       new File('$localDocPath/picresized$i.$fileExtension')
         ..writeAsBytesSync(LocalImage.encodeJpg(imageResized));   
 
-      files.add(await MultipartFile.fromFile(filepaths[i], filename: "picture$i.$fileExtension"));
+      files.add(await MultipartFile.fromFile('$localDocPath/picresized$i.$fileExtension', filename: "picture$i.$fileExtension"));
+      //files.add(await MultipartFile.fromFile(filepaths[i], filename: "picture$i.$fileExtension"));
     } 
     
     Map<String,dynamic> data = tree.toMap();

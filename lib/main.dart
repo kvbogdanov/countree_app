@@ -17,6 +17,7 @@ class CountreeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Countree',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: countreeTheme,
       ),

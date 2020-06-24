@@ -122,7 +122,7 @@ Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = fal
             else
               Navigator.pushReplacementNamed(context, LogoutPage.route);
           },
-        ),        
+        ),              
       ],
     ),
   );

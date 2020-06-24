@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:countree/model/user.dart';
 
 
 import 'package:countree/widgets/drawer.dart';
@@ -16,11 +17,15 @@ AboutPageState createState() {
 class AboutPageState extends State<AboutPage>{
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool signed = false;
+  User currentUser;
 
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return (prefs.getBool('logged') ?? false);
-  }  
+    final res = (prefs.getBool('logged') ?? false);
+    if(res == true)
+      return await loadCurrentUser();
+    return res;
+  } 
 
   @override
   void initState() {
@@ -28,9 +33,15 @@ class AboutPageState extends State<AboutPage>{
 
     _getLoggedState().then((result){
         setState(() {
-          signed = result;
+          if(result is User)
+          {
+            currentUser = result;
+            signed = true;
+          }
+          else
+            signed = false;
         });
-    });
+    }); 
   }
 
   @override
@@ -39,7 +50,7 @@ class AboutPageState extends State<AboutPage>{
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(title: Text('О проекте')),
-      endDrawer: buildDrawer(context, AboutPage.route, signed:signed),
+      endDrawer: buildDrawer(context, AboutPage.route, signed:signed, cu: currentUser),
       body: Padding(
         padding: EdgeInsets.all(15.0),
         child: Column(

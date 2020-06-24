@@ -149,7 +149,8 @@ class MytreesPageState extends State<MytreesPage>{
                   await pr.show();
                   for(var lt in localTrees)
                   {
-                    await Tree.sendToServer(lt);
+                    if(lt.uploaded==0)
+                      await Tree.sendToServer(lt);
                   }
                   await pr.hide();
                 }

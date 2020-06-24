@@ -58,6 +58,94 @@ class TreeformPageState extends State<TreeformPage>{
     return res;
   } 
 
+  _getMapLayer() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    var newMapLayerName = prefs.getString('mapsrc');
+
+    if(newMapLayerName != '' && newMapLayerName != mapSourcesNames[0])
+    {
+      // antipattern! to remove
+      switch (newMapLayerName) {
+        case "Mapbox (карта)": mainLayers[0] = mapSources[1]; break;
+        case "Mapbox (спутниковый снимок)": mainLayers[0] = mapSources[2]; break;
+        case "OSM": mainLayers[0] = mapSources[3]; break;
+        case "Яндекс (тест)": mainLayers[0] = mapSources[4]; break;
+        default: mainLayers[0] = mapSources[0];
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  _getPrevTrees() async {
+    final localTrees = await Dbtree.Tree().select().orderByDesc('created').toList();
+
+    prevMarkers = <Marker>[];
+    for(var tree in localTrees)
+    {
+      Color mInnerColor = Color(0xff225D9C);
+      Color mBorderColor = Colors.green;
+      double mSize = 16;
+
+      if(tree.is_seedling == 1)
+      {
+        mInnerColor = Color(0xff7EE043);
+        mSize = 12;
+      }
+      else if(tree.is_alive == 1)
+      {
+          mInnerColor = Color(0xff222222);
+      }
+      else if(TreeTypeList.getById(tree.id_treetype).decidious==true)
+      {
+        mInnerColor = Color(0xffe0c143);
+      }
+      else
+      {
+        mInnerColor = Color(0xff7ee043);
+      }
+
+      Marker tempMarker = Marker(
+          width: mSize + 4,
+          height: mSize + 4,
+          point: LatLng(tree.latitude, tree.longitude),
+          builder: (ctx) => Container(
+            child: 
+            GestureDetector(
+              onTap: () {
+                _scaffoldKey.currentState.hideCurrentSnackBar();
+                _scaffoldKey.currentState.showSnackBar(SnackBar(
+                  content:
+                    Row(
+                      children: <Widget>[                              
+                        Text(TreeTypeList.getById(tree.id_treetype).name)
+                      ],
+                    )
+                ));
+              },
+              child:
+                Container(
+                  width: mSize,
+                  height: mSize,
+                  decoration: new BoxDecoration(
+                    color: mInnerColor,
+                    borderRadius: new BorderRadius.all(new Radius.circular(50.0)),
+                    border: new Border.all(
+                      color: mBorderColor,
+                      width: 2.0,
+                    ),
+                  ),
+                ),
+            ),
+          ),
+        );
+      prevMarkers.add(tempMarker);
+    }    
+  }
+
   Future<String>  _localPath() async {
     final directory = await  getApplicationDocumentsDirectory();
     return directory.path;
@@ -74,6 +162,7 @@ class TreeformPageState extends State<TreeformPage>{
   double zoomLevel = 18.0;
 
   List<Marker> markers = <Marker>[];
+  List<Marker> prevMarkers = <Marker>[];
   int maxClusterRadius = 100;
   int totalTrees = 0;
   List<LayerOptions> mainLayers = [
@@ -173,8 +262,14 @@ class TreeformPageState extends State<TreeformPage>{
         });
     });
     
-
+    _getMapLayer().then((result){
+        setState(() {});
+    });
   
+    _getPrevTrees().then((result){
+      setState(() {});
+    });
+
     _getCurrentLocation().then((result){
       mapController.move(result, zoomLevel);
       currentPoint = result;
@@ -393,14 +488,14 @@ class TreeformPageState extends State<TreeformPage>{
     final lastTree = await Dbtree.Tree().select().orderByDesc('created').toSingle();
 
     if(lastTree != null)
-      _loadFormWithTree(lastTree);
+      _loadFormWithTree(lastTree, noimg:true);
     else
       return false;
     
     return true;
   }
 
-  _loadFormWithTree(Dbtree.Tree tree, {setpos: false})
+  _loadFormWithTree(Dbtree.Tree tree, {setpos: false, noimg: false})
   {
     setState(() {
         if(setpos==true)
@@ -421,10 +516,19 @@ class TreeformPageState extends State<TreeformPage>{
         visSeedling = (tree.is_seedling==0);
         notSure['isalive'] = (tree.notsure_is_alive==1);
 
+        if(visRegular == false)
+        {
+          visSeedling = false;
+          return;
+        }
+
         // малое насаждение
         _fbKey.currentState.fields['isseedling'].currentState.didChange(tree.is_seedling==1);
         visRegular = (tree.is_seedling==0);
         notSure['isseedling'] = (tree.notsure_is_seedling==1);
+
+        if(visSeedling == false)
+          return;
 
         // обхват ствола
         _fbKey.currentState.fields['diameter'].currentState.didChange(tree.diameter.toString());
@@ -439,11 +543,14 @@ class TreeformPageState extends State<TreeformPage>{
         notSure['firstthread'] = (tree.notsure_firstthread==1);
 
         // состояние  дерева
-        var condList = tree.ids_condition.split(','); //.map(int.parse).toList();
-        if(condList.isEmpty!=true)
+        if(tree.ids_condition != null)
         {
-          final condListIds = tree.ids_condition.split(',').toList();
-          _fbKey.currentState.fields['condition'].currentState.didChange(condListIds);
+          var condList = tree.ids_condition.split(','); //.map(int.parse).toList();
+          if(condList.isEmpty!=true)
+          {
+            final condListIds = tree.ids_condition.split(',').toList();
+            _fbKey.currentState.fields['condition'].currentState.didChange(condListIds);
+          }
         }
         notSure['condition'] = (tree.notsure_ids_condition==1);
 
@@ -452,11 +559,14 @@ class TreeformPageState extends State<TreeformPage>{
         notSure['surroundings'] = (tree.notsure_id_surroundings==1);
 
         // окружение  дерева
-        var neibList = tree.ids_neighbours.split(','); //.map(int.parse).toList();
-        if(neibList.isEmpty!=true)
+        if(tree.ids_neighbours != null)
         {
-          final neibListIds = tree.ids_neighbours.split(',').toList();
-          _fbKey.currentState.fields['neighbours'].currentState.didChange(neibListIds);
+          var neibList = tree.ids_neighbours.split(','); //.map(int.parse).toList();
+          if(neibList.isEmpty!=true)
+          {
+            final neibListIds = tree.ids_neighbours.split(',').toList();
+            _fbKey.currentState.fields['neighbours'].currentState.didChange(neibListIds);
+          }
         }
         notSure['neighbours'] = (tree.notsure_ids_neighbours==1);
         
@@ -468,7 +578,7 @@ class TreeformPageState extends State<TreeformPage>{
         _fbKey.currentState.fields['height'].currentState.didChange(tree.height);
         notSure['height'] = (tree.notsure_firstthread==1);
 
-        if(tree.is_alive==0 && tree.is_seedling==0)
+        if(noimg == false && tree.is_alive==0 && tree.is_seedling==0)
         {
           // изображения
           final imagePathList = tree.images.split(";");
@@ -497,9 +607,15 @@ class TreeformPageState extends State<TreeformPage>{
       );
     }).toList();
 
+
     if(mainLayers.length > 1)
+    {
       mainLayers.removeLast();
 
+      if(prevMarkers.length>0 && mainLayers.length>1)
+        mainLayers.removeLast();
+    }
+    mainLayers.add(MarkerLayerOptions(markers: prevMarkers));
     mainLayers.add(MarkerLayerOptions(markers: markers));
       
 
@@ -1882,12 +1998,14 @@ class TreeformPageState extends State<TreeformPage>{
                                                 child: new Text('На карту', style: TextStyle(fontSize: 20)),
                                                 onPressed: () async {
                                                   await _rememberMapPosition();
+                                                  /*
                                                   Navigator.of(context).pop(true);
                                                   Navigator.of(context).pop(true);
                                                   Navigator.of(context).pop(true);
                                                   if(args!=null)
                                                     Navigator.of(context).pop(true);
-                                                  //Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+                                                  */
+                                                  Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
                                                 }
                                               ),
                                               new FlatButton(

@@ -153,8 +153,8 @@ class Tree{
     BaseOptions options = BaseOptions(
       baseUrl: uri,
       responseType: ResponseType.plain,
-      connectTimeout: 30000,
-      receiveTimeout: 30000,
+      connectTimeout: 10000,
+      receiveTimeout: 10000,
       validateStatus: (code) {
         if (code >= 200) {
           return true;
@@ -164,22 +164,28 @@ class Tree{
 
     Dio dio = Dio(options);
 
-    List<String> filepaths = tree.images.split(';');
+    List<String> filepaths = (tree.images!=null)?tree.images.split(';'):[];
     List<MultipartFile> files = [];
     final directory = await  getApplicationDocumentsDirectory();
     final localDocPath = directory.path;
 
     for (var i = 0; i < filepaths.length; i++) {
+        try
+        {
+          final curImage = new File(filepaths[i]);
+          final fileExtension = filepaths[i].split(".").last;
+          LocalImage.Image imageOrig = LocalImage.decodeImage(curImage.readAsBytesSync());
+          LocalImage.Image imageResized = LocalImage.copyResize(imageOrig, width: 1290); 
+          new File('$localDocPath/picresized$i.$fileExtension')
+            ..writeAsBytesSync(LocalImage.encodeJpg(imageResized));   
 
-      final curImage = new File(filepaths[i]);
-      final fileExtension = filepaths[i].split(".").last;
-      LocalImage.Image imageOrig = LocalImage.decodeImage(curImage.readAsBytesSync());
-      LocalImage.Image imageResized = LocalImage.copyResize(imageOrig, width: 1290); 
-      new File('$localDocPath/picresized$i.$fileExtension')
-        ..writeAsBytesSync(LocalImage.encodeJpg(imageResized));   
-
-      files.add(await MultipartFile.fromFile('$localDocPath/picresized$i.$fileExtension', filename: "picture$i.$fileExtension"));
-      //files.add(await MultipartFile.fromFile(filepaths[i], filename: "picture$i.$fileExtension"));
+          files.add(await MultipartFile.fromFile('$localDocPath/picresized$i.$fileExtension', filename: "picture$i.$fileExtension"));
+          //files.add(await MultipartFile.fromFile(filepaths[i], filename: "picture$i.$fileExtension"));
+        }
+        catch (e)
+        {
+          continue;
+        }
     } 
     
     Map<String,dynamic> data = tree.toMap();
@@ -189,13 +195,19 @@ class Tree{
     var response = await dio.post(savePath, data: formData);
     debugPrint(response.toString());
 
-    if(int.parse(response.toString()) != 0)
+    try
     {
-      tree.id_system = int.parse(response.toString());
-      tree.uploaded = new DateTime.now().millisecondsSinceEpoch;
-      tree.save();
+      if(int.parse(response.toString()) != 0)
+      {
+        tree.id_system = int.parse(response.toString());
+        tree.uploaded = new DateTime.now().millisecondsSinceEpoch;
+        tree.save();
 
-      return tree.id_system;
+        return tree.id_system;
+      }
+    }
+    catch (e){
+      return 0;
     }
 
     return 0;

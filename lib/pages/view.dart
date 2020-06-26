@@ -33,6 +33,9 @@ class ViewPageState extends State<ViewPage>{
   int theight = 0;
   String surround = '';
   String state = '';
+  String multibarrel = 'нет';
+  String firstthread = 'н/д';
+  String overall = 'н/д';
   var conditionsWidgets = List<Widget>();
   var neighboursWidgets = List<Widget>();
   var imagesWidgets = List<Widget>();
@@ -95,15 +98,33 @@ class ViewPageState extends State<ViewPage>{
           surround = responseJson['data']['surround']??'-';
           state = responseJson['data']['state']??'';
 
+          if(responseJson['data']['multibarrel'] != null && responseJson['data']['multibarrel']!=0)
+            multibarrel = 'да';
+          else 
+            multibarrel = 'нет';
+
+          final temp1 = responseJson['data']['firstthread']??-1;
+          firstthread = temp1.toString();
+
+          if(responseJson['data']['overall'] != null && responseJson['data']['overall']!=0)
+          {
+            if(responseJson['data']['overall']==1)
+              overall = 'хорошее';
+            if(responseJson['data']['overall']==2)
+              overall = 'удовл.';
+            if(responseJson['data']['overall']==3)
+              overall = 'неудовл.';
+          }
+
           conditionsWidgets = [];
-          if(responseJson['data']['conditions'].toString().length>0)
+          if(responseJson['data']['conditions'].length>0)
             conditionsWidgets.add(Text('Состояние дерева:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)));
           for (var cond in responseJson['data']['conditions']) {
             conditionsWidgets.add(Text(cond, softWrap: true)); 
           }
 
           neighboursWidgets = [];
-          if(responseJson['data']['neighbours'].toString().length>0)
+          if(responseJson['data']['neighbours'].length>0)
             neighboursWidgets.add(Text('Окружение дерева:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)));
           for (var cond in responseJson['data']['neighbours']) {
             neighboursWidgets.add(Text(cond, overflow: TextOverflow.fade, maxLines: 1, softWrap: false)); 
@@ -210,7 +231,7 @@ class ViewPageState extends State<ViewPage>{
                     SizedBox(height: 10),                
                     Row(
                       children: <Widget>[
-                        Text('Многоствольное: н/д', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('Многоствольное: $multibarrel', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     SizedBox(height: 10),
@@ -227,7 +248,7 @@ class ViewPageState extends State<ViewPage>{
                     ),  
                     Row(
                       children: <Widget>[
-                        Text('начинается на высоте: н/д', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('начинается на высоте: $firstthread м', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ],
                     ), 
                     SizedBox(height: 10), 
@@ -264,7 +285,7 @@ class ViewPageState extends State<ViewPage>{
                     SizedBox(height: 10),
                     Row(
                       children: <Widget>[
-                        Text('Общая оценка: н/д', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('Общая оценка: $overall', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ],
                     ),  
                   ]

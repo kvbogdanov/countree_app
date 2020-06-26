@@ -334,7 +334,7 @@ class TreeformPageState extends State<TreeformPage>{
     if(treeInfo['surroundings']==null && notSure['surroundings'] == false)
       errors.add("Необходимо указать условия роста");
 
-    if(treeInfo['treeimages'].length == 0)
+    if(treeInfo['treeimages']==null || treeInfo['treeimages'].length == 0)
       errors.add("Необходимо добавить хотя бы одно фото");
 
     if(treeInfo['height'] == 0 && notSure['height'] == false)
@@ -361,8 +361,37 @@ class TreeformPageState extends State<TreeformPage>{
         is_alive: treeInfo['isalive']==true?1:0,
         notsure_is_alive: notSure['isalive']==true?1:0,
       );
-      var res = await ctree.save();
-      return res>0?ctree:null;
+
+      if(args!=null)
+      {
+        var targetTree = await _getTreeByTime(args);
+        if(targetTree!=null)
+        {
+          targetTree.uploaded = 0;
+          targetTree.id_user = ctree.id_user;
+          targetTree.id_treetype = ctree.id_treetype;
+          targetTree.custom_treetype = ctree.custom_treetype;
+          targetTree.notsure_treetype = ctree.notsure_treetype;
+          targetTree.longitude = ctree.longitude;
+          targetTree.latitude = ctree.latitude;
+          targetTree.is_alive = ctree.is_alive;
+          targetTree.notsure_is_alive = ctree.notsure_is_alive;
+
+          var res = await targetTree.save();
+
+          return targetTree;
+          //return res>0?ctree:targetTree;
+        }
+      }
+      else
+      {
+        var res = await ctree.save();
+        return res>0?ctree:null;
+      }   
+
+
+      //var res = await ctree.save();
+      //return res>0?ctree:null;
     }
     else if(treeInfo['isseedling']==true)
     {
@@ -378,9 +407,40 @@ class TreeformPageState extends State<TreeformPage>{
         notsure_is_alive: notSure['isalive']==true?1:0,
         is_seedling: treeInfo['isseedling']==true?1:0,
         notsure_is_seedling: notSure['isseedling']==true?1:0,
-      ); 
-      var res = await ctree.save();
-      return res>0?ctree:null;           
+      );
+
+
+      if(args!=null)
+      {
+        var targetTree = await _getTreeByTime(args);
+        if(targetTree!=null)
+        {
+          targetTree.uploaded = 0;
+          targetTree.id_user = ctree.id_user;
+          targetTree.id_treetype = ctree.id_treetype;
+          targetTree.custom_treetype = ctree.custom_treetype;
+          targetTree.notsure_treetype = ctree.notsure_treetype;
+          targetTree.longitude = ctree.longitude;
+          targetTree.latitude = ctree.latitude;
+          targetTree.is_alive = ctree.is_alive;
+          targetTree.notsure_is_alive = ctree.notsure_is_alive;
+          targetTree.is_seedling = ctree.is_seedling;
+          targetTree.notsure_is_seedling = ctree.notsure_is_seedling;
+
+          var res = await targetTree.save();
+
+          return targetTree;
+          //return res>0?ctree:targetTree;
+        }
+      }
+      else
+      {
+        var res = await ctree.save();
+        return res>0?ctree:null;
+      }      
+
+      //var res = await ctree.save();
+      //return res>0?ctree:null;           
     }
     else
     {
@@ -458,10 +518,11 @@ class TreeformPageState extends State<TreeformPage>{
           targetTree.height = ctree.height;
           targetTree.images = ctree.images;
 
-          targetTree.created = ctree.created;
-
+          //targetTree.created = ctree.created;
           var res = await targetTree.save();
-          return res>0?ctree:targetTree;
+
+          return targetTree;
+          //return res>0?ctree:targetTree;
         }
       }
       else

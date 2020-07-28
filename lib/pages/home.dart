@@ -57,7 +57,10 @@ Future<Iterable> fetchTrees(String uri) async {
         contentType: 'application/json', //ContentType.parse('application/json')
       );
 
-      final Response response = await dio.post('/mobile/points', data: FormData.fromMap({}), options: options1);
+      final loggedUser = await loadCurrentUser(); 
+      final Response response = await dio.post('/mobile/points', data: FormData.fromMap({'user_id': (loggedUser!=null)?loggedUser.id_system:-1}), options: options1);
+
+      print((loggedUser!=null)?loggedUser.id_system:-1);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return compute(parseTrees, response.data.toString());
       } else

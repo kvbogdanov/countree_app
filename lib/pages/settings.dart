@@ -121,6 +121,7 @@ class SettingsPageState extends State<SettingsPage>{
                       valueListenable: _activeMapName
                     ),
                     SizedBox(height: 15),
+                    /*
                     FormBuilderSwitch(
                       attribute: "savepos",
                       label: Text("Сохранять позицию и масштаб", style: TextStyle(color: Colors.black87, fontSize: 16))
@@ -162,10 +163,11 @@ class SettingsPageState extends State<SettingsPage>{
                           return false;                      
                       },
                     ),
+                    */
                   ],
                 ),
             ),
-            Text('ver: 1.0.2 build 21', style: TextStyle(fontSize: 12))  
+            Text('ver: 1.0.4 build 23', style: TextStyle(fontSize: 12))  
             /*
             Row(  
               mainAxisAlignment: MainAxisAlignment.center,                         

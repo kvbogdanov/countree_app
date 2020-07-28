@@ -196,8 +196,7 @@ class TreeformPageState extends State<TreeformPage>{
     final curLon = (prefs.getDouble('longitude') ?? 0);
     final curZoom = (prefs.getDouble('zoom') ?? 0);
 
-    print(curLat.toString() + ' ' + curLon.toString());
-
+    //print(curLat.toString() + ' ' + curLon.toString());
     if(useStored==false || curLat==0)
     {
       _serviceEnabled = await location.serviceEnabled();
@@ -592,6 +591,7 @@ class TreeformPageState extends State<TreeformPage>{
           return;
 
         // обхват ствола
+        print(tree.diameter.toString());
         _fbKey.currentState.fields['diameter'].currentState.didChange(tree.diameter.toString());
         notSure['diameter'] = (tree.notsure_diameter==1);
 
@@ -1127,12 +1127,12 @@ class TreeformPageState extends State<TreeformPage>{
                                             ),
                                             FormBuilderTextField(
                                               attribute: "diameter",
-                                              keyboardType: TextInputType.number,
+                                              keyboardType: TextInputType.number, 
                                               initialValue: '10',
                                               validators: [
                                                 FormBuilderValidators.numeric(),
                                                 FormBuilderValidators.max(1000),
-                                              ],
+                                              ],                                              
                                             ),
                                           ]
                                         )

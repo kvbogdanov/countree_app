@@ -219,7 +219,7 @@ class ViewPageState extends State<ViewPage>{
                   children: [
                     Row(
                       children: <Widget>[
-                        Text('Диаметер (см): $diameter', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('Диаметр (см): $diameter', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     SizedBox(height: 10),

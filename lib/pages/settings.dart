@@ -6,6 +6,8 @@ import 'package:countree/widgets/drawer.dart';
 import 'package:countree/data/maps.dart';
 import 'package:countree/data/colors.dart';
 
+import 'package:countree/model/user.dart';
+
 class SettingsPage extends StatefulWidget {
   static const String route = 'settings';
 
@@ -15,18 +17,32 @@ class SettingsPage extends StatefulWidget {
   }
 }
 
-class SettingsPageState extends State<SettingsPage>{
+class SettingsPageState extends State<SettingsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   bool signed = false;
+  bool onlymy = true;
   String sourcesDefault = '';
   List<DropdownMenuItem> sourcesMenuItems = [];
   ValueNotifier<String> _activeMapName;
 
+  User currentUser;
+
+  _getOnlymeState() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return (prefs.getBool('onlymy') ?? true);
+  }
+
+  _setOnlymeState(bool val) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onlymy', val);
+    return true;
+  }
+
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return (prefs.getBool('logged') ?? false);
-  }  
+  }
 
   _getMapLayer() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -36,92 +52,117 @@ class SettingsPageState extends State<SettingsPage>{
   _setMapLayer(String name) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('mapsrc', name);
-    return true;    
-  }  
+    return true;
+  }
 
   @override
   void initState() {
     super.initState();
 
-    mapSourcesNames.forEach((key, value) { 
+    mapSourcesNames.forEach((key, value) {
       sourcesMenuItems.add(DropdownMenuItem(
-                                value: value,
-                                child: Text('$value'),
-                              ));
+        value: value,
+        child: Text('$value'),
+      ));
     });
 
     sourcesDefault = sourcesMenuItems[1].value;
-   
-    _getMapLayer().then((result){
-        setState(() {
-          print(result);
-          if(result != '')
-          {
-            sourcesDefault = result;
-            _activeMapName.value = sourcesDefault;
-            _fbKey.currentState.fields['mapsrc'].currentState.didChange(sourcesDefault);
-          }
-        });
+
+    _getLoggedState().then((result) {
+      setState(() {
+        if (result is User) {
+          currentUser = result;
+          signed = true;
+        } else
+          signed = false;
+      });
     });
 
+    _getOnlymeState().then((result) {
+      setState(() {
+        onlymy = result;
+        _fbKey.currentState.fields['onlymy'].currentState.didChange(onlymy);
+      });
+    });
+
+    _getMapLayer().then((result) {
+      setState(() {
+        print(result);
+        if (result != '') {
+          sourcesDefault = result;
+          _activeMapName.value = sourcesDefault;
+          _fbKey.currentState.fields['mapsrc'].currentState
+              .didChange(sourcesDefault);
+        }
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-     _activeMapName = ValueNotifier<String>(sourcesDefault);
+    _activeMapName = ValueNotifier<String>(sourcesDefault);
 
     return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text('Настройки'),
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title: Text('Настройки'),
           actions: <Widget>[
             new IconButton(
               icon: new Icon(Icons.save_alt),
               onPressed: () {
                 if (_fbKey.currentState.saveAndValidate()) {
                   _setMapLayer(_fbKey.currentState.value['mapsrc']);
-                  if(sourcesDefault == _fbKey.currentState.value['mapsrc'])
+                  _setOnlymeState(_fbKey.currentState.value['onlymy']);
+                  /*
+                  if (sourcesDefault == _fbKey.currentState.value['mapsrc'])
                     Navigator.of(context).pop();
-                  else
-                    Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
-                }                
+                  else */
+                  Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
+                }
               },
             ),
-         ],  
-      ),
-      endDrawer: buildDrawer(context, SettingsPage.route, signed:signed),
-      body: Padding(
-        padding: EdgeInsets.all(15.0),
-        child: Column(          
-          children: <Widget>[
+          ],
+        ),
+        endDrawer: buildDrawer(context, SettingsPage.route, signed: signed),
+        body: Padding(
+          padding: EdgeInsets.all(15.0),
+          child: Column(children: <Widget>[
             FormBuilder(
               key: _fbKey,
-              child: 
-                Column(
-                  children: <Widget>[
-                    ValueListenableBuilder(
-                      builder: (BuildContext context, String value, Widget child) {
+              child: Column(
+                children: <Widget>[
+                  ValueListenableBuilder(
+                      builder:
+                          (BuildContext context, String value, Widget child) {
                         return FormBuilderDropdown(
-                          attribute: "mapsrc",
-                          decoration: InputDecoration(
-                            labelText: "Карта",
-                            border: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.green,
-                                width: 20,
+                            attribute: "mapsrc",
+                            decoration: InputDecoration(
+                              labelText: "Карта",
+                              border: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.green,
+                                  width: 20,
+                                ),
                               ),
                             ),
-                          ),
-                          initialValue: value,
-                          hint: Text('Выберите источник тайлов'),
-                          validators: [FormBuilderValidators.required()],
-                          items: sourcesMenuItems
-                        );
+                            initialValue: value,
+                            hint: Text('Выберите источник тайлов'),
+                            validators: [FormBuilderValidators.required()],
+                            items: sourcesMenuItems);
                       },
-                      valueListenable: _activeMapName
-                    ),
-                    SizedBox(height: 15),
-                    /*
+                      valueListenable: _activeMapName),
+                  SizedBox(height: 15),
+                  Visibility(
+                    visible: true,
+                    child: FormBuilderSwitch(
+                        attribute: "onlymy",
+                        initialValue: onlymy,
+                        label: Text("Отображать на карте только мои деревья",
+                            style: TextStyle(
+                                color: Colors.black87, fontSize: 16))),
+                  ),
+                  SizedBox(height: 15),
+                  /*
                     FormBuilderSwitch(
                       attribute: "savepos",
                       label: Text("Сохранять позицию и масштаб", style: TextStyle(color: Colors.black87, fontSize: 16))
@@ -164,10 +205,10 @@ class SettingsPageState extends State<SettingsPage>{
                       },
                     ),
                     */
-                  ],
-                ),
+                ],
+              ),
             ),
-            Text('ver: 1.0.4 build 23', style: TextStyle(fontSize: 12))  
+            Text('ver: 1.0.4 build 23', style: TextStyle(fontSize: 12))
             /*
             Row(  
               mainAxisAlignment: MainAxisAlignment.center,                         
@@ -196,10 +237,7 @@ class SettingsPageState extends State<SettingsPage>{
               ],
             )
             */
-          ]
-        ),
-      )
-    );
+          ]),
+        ));
   }
-
 }

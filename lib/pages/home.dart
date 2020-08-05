@@ -21,23 +21,23 @@ import 'package:countree/pages/view.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:countree/model/user.dart';
 
+import 'package:countree/model/tree.dart' as Dbtree;
+
 const MAXZOOM = 20.0;
 
-var uuid = Uuid(); 
+var uuid = Uuid();
 
 Iterable parseTrees(String responseBody) {
   final parsed = json.decode(responseBody);
-  
-  if(parsed.containsKey('trees'))
-  {
+
+  if (parsed.containsKey('trees')) {
     return parsed['trees'];
   }
   return {};
 }
 
 Future<Iterable> fetchTrees(String uri) async {
-
-    BaseOptions options = BaseOptions(
+  BaseOptions options = BaseOptions(
       baseUrl: uri,
       responseType: ResponseType.plain,
       connectTimeout: 30000,
@@ -50,35 +50,42 @@ Future<Iterable> fetchTrees(String uri) async {
         return false;
       });
 
-    Dio dio = Dio(options);
-    try {
-      Options options1 = Options(
-        followRedirects: true,
-        contentType: 'application/json', //ContentType.parse('application/json')
-      );
+  Dio dio = Dio(options);
+  try {
+    Options options1 = Options(
+      followRedirects: true,
+      contentType: 'application/json', //ContentType.parse('application/json')
+    );
 
-      final loggedUser = await loadCurrentUser(); 
-      final Response response = await dio.post('/mobile/points', data: FormData.fromMap({'user_id': (loggedUser!=null)?loggedUser.id_system:-1}), options: options1);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final onlymy = (prefs.getBool('onlymy') ?? true);
 
-      print((loggedUser!=null)?loggedUser.id_system:-1);
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return compute(parseTrees, response.data.toString());
-      } else
-        throw Exception('Authentication Error');
-    } on DioError catch (exception) {
-      if (exception == null ||
-          exception.toString().contains('SocketException')) {
-        throw Exception("Network Error");
-      } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT ||
-          exception.type == DioErrorType.CONNECT_TIMEOUT) {
-        throw Exception(
-            "Could'nt connect, please ensure you have a stable network.");
-      } else {
-        return {};
-      }
+    final loggedUser = await loadCurrentUser();
+
+    final Response response = await dio.post('/mobile/points',
+        data: FormData.fromMap({
+          'user_id': ((loggedUser != null) && (onlymy == true))
+              ? loggedUser.id_system
+              : -1
+        }),
+        options: options1);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return compute(parseTrees, response.data.toString());
+    } else
+      throw Exception('Authentication Error');
+  } on DioError catch (exception) {
+    if (exception == null || exception.toString().contains('SocketException')) {
+      throw Exception("Network Error");
+    } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT ||
+        exception.type == DioErrorType.CONNECT_TIMEOUT) {
+      throw Exception(
+          "Could'nt connect, please ensure you have a stable network.");
+    } else {
+      return {};
     }
+  }
 }
-
 
 class HomePage extends StatefulWidget {
   static const String route = '/';
@@ -89,7 +96,7 @@ class HomePage extends StatefulWidget {
   }
 }
 
-class HomePageState extends State<HomePage>{
+class HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   _getCurrentCity() async {
@@ -102,44 +109,50 @@ class HomePageState extends State<HomePage>{
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final res = (prefs.getBool('logged') ?? false);
-    if(res == true)
-      return await loadCurrentUser();
+    if (res == true) return await loadCurrentUser();
     return res;
-  }  
+  }
 
   _getMapLayer() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var newMapLayerName = prefs.getString('mapsrc');
 
-    if(newMapLayerName != '' && newMapLayerName != mapSourcesNames[0])
-    {
+    if (newMapLayerName != '' && newMapLayerName != mapSourcesNames[0]) {
       // antipattern! to remove
       switch (newMapLayerName) {
-        case "Mapbox (карта)": mainLayers[0] = mapSources[1]; break;
-        case "Mapbox (спутниковый снимок)": mainLayers[0] = mapSources[2]; break;
-        case "OSM": mainLayers[0] = mapSources[3]; break;
-        case "Яндекс (тест)": mainLayers[0] = mapSources[4]; break;
-        default: mainLayers[0] = mapSources[0];
+        case "Mapbox (карта)":
+          mainLayers[0] = mapSources[1];
+          break;
+        case "Mapbox (спутниковый снимок)":
+          mainLayers[0] = mapSources[2];
+          break;
+        case "OSM":
+          mainLayers[0] = mapSources[3];
+          break;
+        case "Яндекс (тест)":
+          mainLayers[0] = mapSources[4];
+          break;
+        default:
+          mainLayers[0] = mapSources[0];
       }
 
       return true;
     }
 
     return false;
-  }    
+  }
 
   _setCurrentCity(String cityname) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     int ccounter = 0;
 
-    for(var city in CountreeCities.cities){
-      if(city.name == cityname)
-      {
+    for (var city in CountreeCities.cities) {
+      if (city.name == cityname) {
         await prefs.setInt('currentCity', ccounter);
         mapController.move(city.center, 16.0);
-        await _loadPointsFast(city.uri);    
+        await _loadPointsFast(city.uri);
         break;
       }
       ccounter++;
@@ -149,104 +162,101 @@ class HomePageState extends State<HomePage>{
   Future<dynamic> _loadPointsFast(String uri) async {
     var responseTrees = await fetchTrees(uri);
     markers = <Marker>[];
-    for(var tree in responseTrees)
-    {
+    for (var tree in responseTrees) {
       Color mInnerColor = Color(0xff225D9C);
       Color mBorderColor = Colors.green;
       double mSize = 16;
 
-      switch(tree['layout'])
-      {
-          case 'small': {
-              mInnerColor = Color(0xff7EE043);
-              mSize = 12;
+      switch (tree['layout']) {
+        case 'small':
+          {
+            mInnerColor = Color(0xff7EE043);
+            mSize = 12;
           }
           break;
-          case 'dead': {
-              mInnerColor = Color(0xff222222);
+        case 'dead':
+          {
+            mInnerColor = Color(0xff222222);
           }
           break;
-          case 'leaf': {
-              mInnerColor = Color(0xffe0c143);
+        case 'leaf':
+          {
+            mInnerColor = Color(0xffe0c143);
           }
           break;
-          case 'needle': {
-              mInnerColor = Color(0xff7ee043);
+        case 'needle':
+          {
+            mInnerColor = Color(0xff7ee043);
           }
           break;
-          case 'cutdown': {
-              mInnerColor = Colors.red;
-              mBorderColor = Colors.red;
-              mSize = 14;
+        case 'cutdown':
+          {
+            mInnerColor = Colors.red;
+            mBorderColor = Colors.red;
+            mSize = 14;
           }
           break;
       }
 
       Marker tempMarker = Marker(
-          width: mSize + 4,
-          height: mSize + 4,
-          point: LatLng(double.parse(tree['lat']), double.parse(tree['lon'])),
-          builder: (ctx) => Container(
-            child: 
-            GestureDetector(
-              onTap: () {
-                _scaffoldKey.currentState.hideCurrentSnackBar();
-                _scaffoldKey.currentState.showSnackBar(SnackBar(
-                  content:
-                    Row(
-                      children: <Widget>[                              
-                        //Text('#24-'+tree['id'].toString()+" "),
-                        Text(tree['name']),
-                        SizedBox(width: 15),
-                        RaisedButton(
-                          child: Text("Детально"),
-                          color: Colors.grey,
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              ViewPage.route,
-                              arguments: tree['id']??0,
-                            );                                  
-                          }
-                        )
-                      ],
-                    )
-                ));
-              },
-              child:
-                Container(
-                  width: mSize,
-                  height: mSize,
-                  decoration: new BoxDecoration(
-                    color: mInnerColor,
-                    borderRadius: new BorderRadius.all(new Radius.circular(50.0)),
-                    border: new Border.all(
-                      color: mBorderColor,
-                      width: 2.0,
-                    ),
-                  ),
+        width: mSize + 4,
+        height: mSize + 4,
+        point: LatLng(double.parse(tree['lat']), double.parse(tree['lon'])),
+        builder: (ctx) => Container(
+          child: GestureDetector(
+            onTap: () {
+              _scaffoldKey.currentState.hideCurrentSnackBar();
+              _scaffoldKey.currentState.showSnackBar(SnackBar(
+                  content: Row(
+                children: <Widget>[
+                  //Text('#24-'+tree['id'].toString()+" "),
+                  Text(tree['name']),
+                  SizedBox(width: 15),
+                  RaisedButton(
+                      child: Text("Детально"),
+                      color: Colors.grey,
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          ViewPage.route,
+                          arguments: tree['id'] ?? 0,
+                        );
+                      })
+                ],
+              )));
+            },
+            child: Container(
+              width: mSize,
+              height: mSize,
+              decoration: new BoxDecoration(
+                color: mInnerColor,
+                borderRadius: new BorderRadius.all(new Radius.circular(50.0)),
+                border: new Border.all(
+                  color: mBorderColor,
+                  width: 2.0,
                 ),
+              ),
             ),
           ),
-        );
+        ),
+      );
       markers.add(tempMarker);
     }
   }
 
-  Future<dynamic> _loadPoints(String uri) async {
-
+  Future<dynamic> _loadMyTrees(String uri) async {
     BaseOptions options = BaseOptions(
-      baseUrl: uri,
-      responseType: ResponseType.plain,
-      connectTimeout: 30000,
-      receiveTimeout: 30000,
-      validateStatus: (code) {
-        if (code >= 200) {
-          return true;
-        }
+        baseUrl: uri,
+        responseType: ResponseType.plain,
+        connectTimeout: 30000,
+        receiveTimeout: 30000,
+        validateStatus: (code) {
+          if (code >= 200) {
+            return true;
+          }
 
-        return false;
-      });
+          return false;
+        });
 
     Dio dio = Dio(options);
     try {
@@ -255,97 +265,21 @@ class HomePageState extends State<HomePage>{
         contentType: 'application/json', //ContentType.parse('application/json')
       );
 
-      Response response = await dio.post('/mobile/points', data: FormData.fromMap({}), options: options);
+      final loggedUser = await loadCurrentUser();
 
+      if ((loggedUser == null)) return null;
+
+      Response response = await dio.post('/mobile/mytrees',
+          data: FormData.fromMap({'user_id': loggedUser.id_system}),
+          options: options);
+      //debugPrint(response.data);
       if (response.statusCode == 200 || response.statusCode == 201) {
-
         var responseJson = json.decode(response.data);
+        //print(responseJson['data']);
 
-        if(responseJson.containsKey('trees'))
-        {
-          markers = <Marker>[];
-          for(var tree in responseJson['trees'])
-          {
-            Color mInnerColor = Color(0xff225D9C);
-            Color mBorderColor = Colors.green;
-            double mSize = 16;
-
-            switch(tree['layout'])
-            {
-                case 'small': {
-                    mInnerColor = Color(0xff7EE043);
-                    mSize = 12;
-                }
-                break;
-                case 'dead': {
-                    mInnerColor = Color(0xff222222);
-                }
-                break;
-                case 'leaf': {
-                    mInnerColor = Color(0xffe0c143);
-                }
-                break;
-                case 'needle': {
-                    mInnerColor = Color(0xff7ee043);
-                }
-                break;
-                case 'cutdown': {
-                    mInnerColor = Colors.red;
-                    mBorderColor = Colors.red;
-                    mSize = 14;
-                }
-                break;
-            }
-
-            Marker tempMarker = Marker(
-                width: mSize + 4,
-                height: mSize + 4,
-                point: LatLng(double.parse(tree['lat']), double.parse(tree['lon'])),
-                builder: (ctx) => Container(
-                  child: 
-                  GestureDetector(
-                    onTap: () {
-                      _scaffoldKey.currentState.hideCurrentSnackBar();
-                      _scaffoldKey.currentState.showSnackBar(SnackBar(
-                        content:
-                          Row(
-                            children: <Widget>[                              
-                              //Text('#24-'+tree['id'].toString()+" "),
-                              Text(tree['name']),
-                              SizedBox(width: 15),
-                              RaisedButton(
-                                child: Text("Детально"),
-                                color: Colors.grey,
-                                onPressed: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    ViewPage.route,
-                                    arguments: tree['id']??0,
-                                  );                                  
-                                }
-                              )
-                            ],
-                          )
-                      ));
-                    },
-                    child:
-                      Container(
-                        width: mSize,
-                        height: mSize,
-                        decoration: new BoxDecoration(
-                          color: mInnerColor,
-                          borderRadius: new BorderRadius.all(new Radius.circular(50.0)),
-                          border: new Border.all(
-                            color: mBorderColor,
-                            width: 2.0,
-                          ),
-                        ),
-                      ),
-                  ),
-                ),
-              );
-            markers.add(tempMarker);
-            
+        if (responseJson['data'].containsKey('trees')) {
+          for (var tree in responseJson['data']['trees']) {
+            this.saveTreeLocal(tree);
           }
         }
 
@@ -366,6 +300,100 @@ class HomePageState extends State<HomePage>{
     }
   }
 
+  Future<Dbtree.Tree> _getTreeBySystemId(int id) async {
+    if (id == null) return null;
+    final tree = await Dbtree.Tree().select().where('id_system=$id').toSingle();
+    return tree;
+  }
+
+  Future<Dbtree.Tree> saveTreeLocal(remoteTree) async {
+    Dbtree.Tree localTree =
+        await this._getTreeBySystemId(remoteTree['id_tree']);
+
+    final notsure = remoteTree['notsure'].split(";");
+
+    if (localTree == null) {
+      if (remoteTree['is_alive'] == 1) {
+        localTree = Dbtree.Tree(
+          created: remoteTree['created'],
+          id_user: remoteTree['id_user'],
+          id_treetype: remoteTree['treetype'],
+          custom_treetype: remoteTree['custom_treetype'],
+          notsure_treetype: notsure.contains('id_treetype') == true ? 1 : 0,
+          longitude: remoteTree['lon'],
+          latitude: remoteTree['lat'],
+          is_alive: remoteTree['is_alive'],
+          notsure_is_alive: notsure.contains('is_alive') == true ? 1 : 0,
+        );
+      } else if (remoteTree['isseedling'] == true) {
+        localTree = Dbtree.Tree(
+          created: remoteTree['created'],
+          id_user: remoteTree['id_user'],
+          id_treetype: remoteTree['treetype'],
+          custom_treetype: remoteTree['custom_treetype'],
+          notsure_treetype: notsure.contains('id_treetype') == true ? 1 : 0,
+          longitude: remoteTree['lon'],
+          latitude: remoteTree['lat'],
+          is_alive: remoteTree['is_alive'],
+          notsure_is_alive: notsure.contains('is_alive') == true ? 1 : 0,
+          is_seedling: remoteTree['is_seedling'],
+          notsure_is_seedling: notsure.contains('is_seedling') == true ? 1 : 0,
+        );
+      } else {
+        var imagePaths = List<String>();
+        for (var ti in remoteTree['pics']) {
+          imagePaths.add(ti.path);
+        }
+
+        localTree = Dbtree.Tree(
+            created: remoteTree['created'],
+            id_user: remoteTree['id_user'],
+            id_treetype: remoteTree['treetype'],
+            custom_treetype: remoteTree['custom_treetype'],
+            notsure_treetype: notsure.contains('id_treetype') == true ? 1 : 0,
+            longitude: remoteTree['lon'],
+            latitude: remoteTree['lat'],
+            is_alive: remoteTree['is_alive'],
+            notsure_is_alive: notsure.contains('is_alive') == true ? 1 : 0,
+            is_seedling: remoteTree['is_seedling'],
+            notsure_is_seedling:
+                notsure.contains('is_seedling') == true ? 1 : 0,
+            diameter: int.parse(remoteTree['diameter']),
+            notsure_diameter: notsure.contains('diameter') == true ? 1 : 0,
+            multibarrel: remoteTree['multibarrel'],
+            notsure_multibarrel:
+                notsure.contains('multibarrel') == true ? 1 : 0,
+            id_state: remoteTree['state'],
+            notsure_id_state: notsure.contains('state') == true ? 1 : 0,
+            firstthread: remoteTree['firstthread'] == null
+                ? 0
+                : remoteTree['firstthread'],
+            notsure_firstthread:
+                notsure.contains('firstthread') == true ? 1 : 0,
+            ids_condition:
+                remoteTree['conditions'].map((i) => i.toString()).join(","),
+            custom_condition: remoteTree['custom_condition'],
+            notsure_ids_condition:
+                notsure.contains('conditions') == true ? 1 : 0,
+            id_surroundings: remoteTree['surround'],
+            notsure_id_surroundings:
+                notsure.contains('surround') == true ? 1 : 0,
+            ids_neighbours:
+                remoteTree['neighbours'].map((i) => i.toString()).join(","),
+            notsure_ids_neighbours:
+                notsure.contains('neighbours') == true ? 1 : 0,
+            id_overall:
+                remoteTree['overall'] == null ? 0 : remoteTree['overall'],
+            height: remoteTree['height'], //double.parse(treeInfo['height']),
+            images: imagePaths.join(";")); //.save();
+      }
+    }
+
+    //print(localTree);
+    await localTree.save();
+    return localTree;
+  }
+
   MapController mapController;
 
   CountreeCity currentCity;
@@ -375,13 +403,10 @@ class HomePageState extends State<HomePage>{
   double zoomLevel = 16.0;
   int maxClusterRadius = 100;
   int totalTrees = 0;
-  List<LayerOptions> mainLayers = [
-        mapSources[0]
-    ];
+  List<LayerOptions> mainLayers = [mapSources[0]];
   LayerOptions clusteredLO;
   LayerOptions nonClusteredLO;
   User currentUser;
-
 
   @override
   void initState() {
@@ -390,228 +415,226 @@ class HomePageState extends State<HomePage>{
     mapController = MapController();
     currentCity = CountreeCities.cities[0];
 
-    _getCurrentCity().then((result){
-        setState(() {
-          currentCity = result;
-          mapController.move(currentCity.center, 16.0); 
-          dropdownValue = currentCity.name;
-          
+    _getCurrentCity().then((result) {
+      setState(() {
+        currentCity = result;
+        mapController.move(currentCity.center, 16.0);
+        dropdownValue = currentCity.name;
 
-          if(markers.length == 0)
-
-            _loadPointsFast(currentCity.uri).then((result){
-              setState(() {
-                totalTrees = markers.length;                  
-                clusteredLO = MarkerClusterLayerOptions(
-                    maxClusterRadius: 100,
-                    animationsOptions: AnimationsOptions(zoom: const Duration(milliseconds: 0), fitBound: const Duration(milliseconds: 500), centerMarker: const Duration(milliseconds: 500), spiderfy: const Duration(milliseconds: 500), centerMarkerCurves: Curves.fastOutSlowIn),
-                    zoomToBoundsOnClick: true,
-                    size: Size(60, 60),
-                    fitBoundsOptions: FitBoundsOptions(
-                      padding: EdgeInsets.all(50),
-                    ),
-                    markers: markers,
-                    polygonOptions: PolygonOptions(
-                        borderColor: countreeTheme.shade400,
-                        color: Colors.black12,
-                        borderStrokeWidth: 3),
-                    builder: (context, markers) {
-                      return FloatingActionButton(
-                        heroTag: uuid.v1(),
-                        child: Text(markers.length.toString()),
-                        onPressed: null,
-                      );
-                    },
+        if (markers.length == 0)
+          _loadPointsFast(currentCity.uri).then((result) {
+            setState(() {
+              totalTrees = markers.length;
+              clusteredLO = MarkerClusterLayerOptions(
+                maxClusterRadius: 100,
+                animationsOptions: AnimationsOptions(
+                    zoom: const Duration(milliseconds: 0),
+                    fitBound: const Duration(milliseconds: 500),
+                    centerMarker: const Duration(milliseconds: 500),
+                    spiderfy: const Duration(milliseconds: 500),
+                    centerMarkerCurves: Curves.fastOutSlowIn),
+                zoomToBoundsOnClick: true,
+                size: Size(60, 60),
+                fitBoundsOptions: FitBoundsOptions(
+                  padding: EdgeInsets.all(50),
+                ),
+                markers: markers,
+                polygonOptions: PolygonOptions(
+                    borderColor: countreeTheme.shade400,
+                    color: Colors.black12,
+                    borderStrokeWidth: 3),
+                builder: (context, markers) {
+                  return FloatingActionButton(
+                    heroTag: uuid.v1(),
+                    child: Text(markers.length.toString()),
+                    onPressed: null,
                   );
-                nonClusteredLO = MarkerLayerOptions(markers: markers);
-                mainLayers.add(clusteredLO);
-              });
+                },
+              );
+              nonClusteredLO = MarkerLayerOptions(markers: markers);
+              mainLayers.add(clusteredLO);
             });
-        });
+          });
+      });
     });
     dropdownValue = currentCity.name;
 
-    _getLoggedState().then((result){
-        setState(() {
-          if(result is User)
-          {
-            currentUser = result;
-            signed = true;
-          }
-          else
-            signed = false;
-        });
+    _getLoggedState().then((result) {
+      setState(() {
+        if (result is User) {
+          currentUser = result;
+          signed = true;
+        } else
+          signed = false;
+      });
     });
 
-    _getMapLayer().then((result){
-        setState(() {});
+    _getMapLayer().then((result) {
+      setState(() {});
     });
 
+    _loadMyTrees(currentCity.uri);
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(title: Text('Countree')),
-      endDrawer: buildDrawer(context, HomePage.route, signed:signed, cu: currentUser),
-      body: Padding(
-        padding: EdgeInsets.all(0.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: 6.0, bottom: 6.0, left: 16.0),
-              child: Row(                
-                children: <Widget>[
-                  Expanded(
-                    flex: 4,
-                    child:
-                      DropdownButtonHideUnderline(
-                        child:
-                          DropdownButton<String>(
-                            value: dropdownValue,
-                            icon: Icon(Icons.arrow_downward),
-                            iconSize: 24,
-                            elevation: 16,
-                            style: TextStyle(color: Colors.black87, fontSize: 18),
-                            onChanged: (String newValue) {
-                              setState(() {
-                                dropdownValue = newValue;
-                                _setCurrentCity(newValue);
-                                zoomLevel =  16;
-                                totalTrees = markers.length;
-                              });
-                            },
-                            items: CountreeCities.getNames 
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          )
-                      )
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
+        key: _scaffoldKey,
+        appBar: AppBar(title: Text('Countree')),
+        endDrawer: buildDrawer(context, HomePage.route,
+            signed: signed, cu: currentUser),
+        body: Padding(
+          padding: EdgeInsets.all(0.0),
+          child: Column(
+            children: [
+              Padding(
+                  padding: EdgeInsets.only(top: 6.0, bottom: 6.0, left: 16.0),
+                  child: Row(children: <Widget>[
+                    Expanded(
+                        flex: 4,
+                        child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                          value: dropdownValue,
+                          icon: Icon(Icons.arrow_downward),
+                          iconSize: 24,
+                          elevation: 16,
+                          style: TextStyle(color: Colors.black87, fontSize: 16),
+                          onChanged: (String newValue) {
+                            setState(() {
+                              dropdownValue = newValue;
+                              _setCurrentCity(newValue);
+                              zoomLevel = 16;
+                              totalTrees = markers.length;
+                            });
+                          },
+                          items: CountreeCities.getNames
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ))),
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
                         padding: EdgeInsets.only(left: 10, right: 10),
-                        child:
-                          (totalTrees==0)? Container( width: 40, height: 40, child:  JumpingDotsProgressIndicator(fontSize: 20.0)) :
-                          Text(
-                            '(' + totalTrees.toString() + ')',
-                            style: TextStyle(fontSize: 10),
-                          ),
+                        child: (totalTrees == 0)
+                            ? Container(
+                                width: 40,
+                                height: 40,
+                                child: JumpingDotsProgressIndicator(
+                                    fontSize: 20.0))
+                            : Text(
+                                '(' + totalTrees.toString() + ')',
+                                style: TextStyle(fontSize: 10),
+                              ),
                       ),
-                  ),
-                  Expanded(
-                    flex: 4,
-                    child: 
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Row(
-                          children: <Widget>[
-                            GestureDetector(
-                              onTap: () {
-                                if(mapController.zoom > 5)
-                                  mapController.move(mapController.center, mapController.zoom-1);
-                                setState(() { 
-                                  var prevZl = zoomLevel.round();
-                                  zoomLevel =  mapController.zoom;
-                                  if(zoomLevel.round()==17 && prevZl>zoomLevel)
-                                  {
-                                    mainLayers.removeLast();
-                                    mainLayers.add(clusteredLO);
-                                  }
-                                });
-                              },
-                              child: ClipOval(
-                                child: Container(
-                                  color: countreeTheme.shade400,
-                                  height: 40.0, 
-                                  width: 40.0,
-                                  child: Icon(Icons.remove) //Center(child: Text('-', style: TextStyle(color: Colors.white, fontSize: 20),)),
+                    ),
+                    Expanded(
+                        flex: 4,
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: Row(
+                            children: <Widget>[
+                              GestureDetector(
+                                onTap: () {
+                                  if (mapController.zoom > 5)
+                                    mapController.move(mapController.center,
+                                        mapController.zoom - 1);
+                                  setState(() {
+                                    var prevZl = zoomLevel.round();
+                                    zoomLevel = mapController.zoom;
+                                    if (zoomLevel.round() == 17 &&
+                                        prevZl > zoomLevel) {
+                                      mainLayers.removeLast();
+                                      mainLayers.add(clusteredLO);
+                                    }
+                                  });
+                                },
+                                child: ClipOval(
+                                  child: Container(
+                                      color: countreeTheme.shade400,
+                                      height: 40.0,
+                                      width: 40.0,
+                                      child: Icon(Icons
+                                          .remove) //Center(child: Text('-', style: TextStyle(color: Colors.white, fontSize: 20),)),
+                                      ),
                                 ),
                               ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(left: 10, right: 10),
-                              child:
-                                Text(
+                              Padding(
+                                padding: EdgeInsets.only(left: 10, right: 10),
+                                child: Text(
                                   'x' + zoomLevel.round().toString(),
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                if(mapController.zoom < MAXZOOM)
-                                  mapController.move(mapController.center, mapController.zoom+1);
-                                setState(() { 
-                                  var prevZl = zoomLevel.round();
-                                  zoomLevel =  mapController.zoom;
-                                  if(zoomLevel.round()==18 && prevZl<zoomLevel)
-                                  {
-                                    mainLayers.removeLast();
-                                    mainLayers.add(nonClusteredLO);
-                                  }
-                                });
-                              },
-                              child: ClipOval(
-                                child: Container(
-                                  color: countreeTheme.shade400,
-                                  height: 40.0, 
-                                  width: 40.0,
-                                  child: Icon(Icons.add) //Center(child: Text('+', style: TextStyle(color: Colors.white, fontSize: 20),)),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  if (mapController.zoom < MAXZOOM)
+                                    mapController.move(mapController.center,
+                                        mapController.zoom + 1);
+                                  setState(() {
+                                    var prevZl = zoomLevel.round();
+                                    zoomLevel = mapController.zoom;
+                                    if (zoomLevel.round() == 18 &&
+                                        prevZl < zoomLevel) {
+                                      mainLayers.removeLast();
+                                      mainLayers.add(nonClusteredLO);
+                                    }
+                                  });
+                                },
+                                child: ClipOval(
+                                  child: Container(
+                                      color: countreeTheme.shade400,
+                                      height: 40.0,
+                                      width: 40.0,
+                                      child: Icon(Icons
+                                          .add) //Center(child: Text('+', style: TextStyle(color: Colors.white, fontSize: 20),)),
+                                      ),
                                 ),
                               ),
-                            ), 
-                          ],
-                        ),
-                      )
-                  )
-                ]
-              )
-            ),
-            Flexible(
-              child: FlutterMap(
-                mapController: mapController,
-                options: MapOptions(
-                  center: currentCity.center, //LatLng(56.01115, 92.85290),
-                  zoom: 16.0,
-                  maxZoom: MAXZOOM,
-                  onTap: (point) {
-                    setState((){
-                      zoomLevel =  mapController.zoom;
-                    });
-                  },
-                  onPositionChanged: (p1, p2) {
-                    if(markers.length>0)
-                      setState((){
-                        //var prevZl = zoomLevel.round();
+                            ],
+                          ),
+                        ))
+                  ])),
+              Flexible(
+                child: FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                    center: currentCity.center, //LatLng(56.01115, 92.85290),
+                    zoom: 16.0,
+                    maxZoom: MAXZOOM,
+                    onTap: (point) {
+                      setState(() {
                         zoomLevel = mapController.zoom;
-
-                        if(zoomLevel.round()>17.99 && mainLayers.last == clusteredLO)
-                        {
-                        
-                          mainLayers.removeLast();
-                          mainLayers.add(nonClusteredLO);
-                        }
-                        else if(zoomLevel.round()<17.99 && mainLayers.last == nonClusteredLO)
-                        {
-                          mainLayers.removeLast();
-                          mainLayers.add(clusteredLO);
-                        }                                         
                       });
-                  },
-                  plugins: [
-                    //ZoomButtonsPlugin(),
-                    MarkerClusterPlugin(),
-                  ],                  
-                ),
-                layers: mainLayers,
-                
-                /*
+                    },
+                    onPositionChanged: (p1, p2) {
+                      if (markers.length > 0)
+                        setState(() {
+                          //var prevZl = zoomLevel.round();
+                          zoomLevel = mapController.zoom;
+
+                          if (zoomLevel.round() > 17.99 &&
+                              mainLayers.last == clusteredLO) {
+                            mainLayers.removeLast();
+                            mainLayers.add(nonClusteredLO);
+                          } else if (zoomLevel.round() < 17.99 &&
+                              mainLayers.last == nonClusteredLO) {
+                            mainLayers.removeLast();
+                            mainLayers.add(clusteredLO);
+                          }
+                        });
+                    },
+                    plugins: [
+                      //ZoomButtonsPlugin(),
+                      MarkerClusterPlugin(),
+                    ],
+                  ),
+                  layers: mainLayers,
+
+                  /*
                 [
                   TileLayerOptions(
                     urlTemplate:
@@ -672,48 +695,48 @@ class HomePageState extends State<HomePage>{
                              
                   //MarkerLayerOptions(markers: markers),
                 ],*/
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: 
-        signed?
-        SpeedDial(
-          animatedIcon: AnimatedIcons.add_event,
-          animatedIconTheme: IconThemeData(size: 32),
-          backgroundColor: Colors.deepOrangeAccent,
-          visible: true,
-          curve: Curves.bounceIn,
-          children: [
-                // FAB 1
-                SpeedDialChild(
-                child: Icon(Icons.add),
-                backgroundColor: countreeTheme.shade600 ,
-                onTap: () {  
-                  Navigator.pushNamed(context, TreeformPage.route); 
-                },
-                label: 'Добавить дерево',
-                labelStyle: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                    fontSize: 16.0),
-                labelBackgroundColor: countreeTheme.shade600),
-                // FAB 2
-                SpeedDialChild(
-                child: Icon(Icons.new_releases),
-                backgroundColor: countreeTheme.shade600 ,
-                onTap: () {
-                   Navigator.pushNamed(context, TreeformPage.route);
-                },
-                label: 'Добавить дерево при посадке',
-                labelStyle: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                    fontSize: 16.0),
-                labelBackgroundColor: countreeTheme.shade600 )
-          ],
-        ):null
+        floatingActionButton: signed
+            ? SpeedDial(
+                animatedIcon: AnimatedIcons.add_event,
+                animatedIconTheme: IconThemeData(size: 32),
+                backgroundColor: Colors.deepOrangeAccent,
+                visible: true,
+                curve: Curves.bounceIn,
+                children: [
+                  // FAB 1
+                  SpeedDialChild(
+                      child: Icon(Icons.add),
+                      backgroundColor: countreeTheme.shade600,
+                      onTap: () {
+                        Navigator.pushNamed(context, TreeformPage.route);
+                      },
+                      label: 'Добавить дерево',
+                      labelStyle: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                          fontSize: 16.0),
+                      labelBackgroundColor: countreeTheme.shade600),
+                  // FAB 2
+                  SpeedDialChild(
+                      child: Icon(Icons.new_releases),
+                      backgroundColor: countreeTheme.shade600,
+                      onTap: () {
+                        Navigator.pushNamed(context, TreeformPage.route);
+                      },
+                      label: 'Добавить дерево при посадке',
+                      labelStyle: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                          fontSize: 16.0),
+                      labelBackgroundColor: countreeTheme.shade600)
+                ],
+              )
+            : null
 
         /*
         FloatingActionButton(
@@ -723,10 +746,7 @@ class HomePageState extends State<HomePage>{
           child: Icon(Icons.add),
           backgroundColor: Colors.deepOrangeAccent ,
         ):null*/
-         
-    );  
 
-
+        );
   }
-
 }

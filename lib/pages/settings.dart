@@ -135,7 +135,7 @@ class SettingsPageState extends State<SettingsPage> {
                       builder:
                           (BuildContext context, String value, Widget child) {
                         return FormBuilderDropdown(
-                            attribute: "mapsrc",
+                            name: "mapsrc",
                             decoration: InputDecoration(
                               labelText: "Карта",
                               border: UnderlineInputBorder(
@@ -147,7 +147,8 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                             initialValue: value,
                             hint: Text('Выберите источник тайлов'),
-                            validators: [FormBuilderValidators.required()],
+                            validator: FormBuilderValidators.compose(
+                                [FormBuilderValidators.required(context)]),
                             items: sourcesMenuItems);
                       },
                       valueListenable: _activeMapName),
@@ -155,9 +156,10 @@ class SettingsPageState extends State<SettingsPage> {
                   Visibility(
                     visible: true,
                     child: FormBuilderSwitch(
-                        attribute: "onlymy",
+                        name: "onlymy",
                         initialValue: onlymy,
-                        label: Text("Отображать на карте только мои деревья",
+                        //decoration: InputDecoration(labelText: 'Age'),
+                        title: Text("Отображать на карте только мои деревья",
                             style: TextStyle(
                                 color: Colors.black87, fontSize: 16))),
                   ),

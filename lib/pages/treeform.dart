@@ -554,7 +554,7 @@ class TreeformPageState extends State<TreeformPage> {
 
       // биологический вид
       final idTreetype = tree.id_treetype;
-      _fbKey.currentState.fields['treetype'].currentState
+      _fbKey.currentState.fields['treetype']
           .didChange(TreeTypeList.getById(idTreetype).name);
       visCustomType = (TreeTypeList.getById(idTreetype).name == 'другой вид');
       if (tree.custom_treetype != null)
@@ -563,8 +563,7 @@ class TreeformPageState extends State<TreeformPage> {
       notSure['treetype'] = (tree.notsure_treetype == 1);
 
       // сухое дерево
-      _fbKey.currentState.fields['isalive'].currentState
-          .didChange(tree.is_alive == 1);
+      _fbKey.currentState.fields['isalive'].didChange(tree.is_alive == 1);
       visRegular = (tree.is_alive == 0);
       visSeedling = (tree.is_seedling == 0);
       notSure['isalive'] = (tree.notsure_is_alive == 1);
@@ -575,8 +574,7 @@ class TreeformPageState extends State<TreeformPage> {
       }
 
       // малое насаждение
-      _fbKey.currentState.fields['isseedling'].currentState
-          .didChange(tree.is_seedling == 1);
+      _fbKey.currentState.fields['isseedling'].didChange(tree.is_seedling == 1);
       visRegular = (tree.is_seedling == 0);
       notSure['isseedling'] = (tree.notsure_is_seedling == 1);
 
@@ -588,12 +586,11 @@ class TreeformPageState extends State<TreeformPage> {
       notSure['diameter'] = (tree.notsure_diameter == 1);
 
       // крона у дерева
-      _fbKey.currentState.fields['state'].currentState.didChange(tree.id_state);
+      _fbKey.currentState.fields['state'].didChange(tree.id_state);
       notSure['state'] = (tree.notsure_id_state == 1);
 
       // высота первой ветви
-      _fbKey.currentState.fields['firstthread'].currentState
-          .didChange(tree.firstthread);
+      _fbKey.currentState.fields['firstthread'].didChange(tree.firstthread);
       notSure['firstthread'] = (tree.notsure_firstthread == 1);
 
       // состояние  дерева
@@ -602,19 +599,18 @@ class TreeformPageState extends State<TreeformPage> {
             tree.ids_condition.split(','); //.map(int.parse).toList();
         if (condList.isEmpty != true) {
           final condListIds = tree.ids_condition.split(',').toList();
-          _fbKey.currentState.fields['condition'].currentState
-              .didChange(condListIds);
+          _fbKey.currentState.fields['condition'].didChange(condListIds);
         }
       }
       notSure['condition'] = (tree.notsure_ids_condition == 1);
 
       // условия роста
-      _fbKey.currentState.fields['surroundings'].currentState
+      _fbKey.currentState.fields['surroundings']
           .didChange(tree.id_surroundings);
       notSure['surroundings'] = (tree.notsure_id_surroundings == 1);
 
       // многоствольное
-      _fbKey.currentState.fields['multibarrel'].currentState
+      _fbKey.currentState.fields['multibarrel']
           .didChange(tree.multibarrel == 1);
       notSure['multibarrel'] = (tree.notsure_multibarrel == 1);
 
@@ -624,26 +620,23 @@ class TreeformPageState extends State<TreeformPage> {
             tree.ids_neighbours.split(','); //.map(int.parse).toList();
         if (neibList.isEmpty != true) {
           final neibListIds = tree.ids_neighbours.split(',').toList();
-          _fbKey.currentState.fields['neighbours'].currentState
-              .didChange(neibListIds);
+          _fbKey.currentState.fields['neighbours'].didChange(neibListIds);
         }
       }
       notSure['neighbours'] = (tree.notsure_ids_neighbours == 1);
 
       // общая оценка
-      _fbKey.currentState.fields['overall'].currentState
-          .didChange(tree.id_overall);
+      _fbKey.currentState.fields['overall'].didChange(tree.id_overall);
       notSure['overall'] = (tree.notsure_id_overall == 1);
 
       // высота первой ветви
-      _fbKey.currentState.fields['height'].currentState.didChange(tree.height);
+      _fbKey.currentState.fields['height'].didChange(tree.height);
       notSure['height'] = (tree.notsure_firstthread == 1);
 
       if (noimg == false && tree.is_alive == 0 && tree.is_seedling == 0) {
         // изображения
 
-        _fbKey.currentState.fields['treeimages'].currentState
-            .didChange(imagesList);
+        _fbKey.currentState.fields['treeimages'].didChange(imagesList);
       }
     });
   }
@@ -800,8 +793,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                 color: countreeTheme.shade800)),
                                         onPressed: () {
                                           setState(() {
-                                            _fbKey.currentState
-                                                .fields['treetype'].currentState
+                                            _fbKey
+                                                .currentState.fields['treetype']
                                                 .didChange(
                                                     TreeTypeList.getById(10)
                                                         .name);
@@ -825,8 +818,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                 color: countreeTheme.shade800)),
                                         onPressed: () {
                                           setState(() {
-                                            _fbKey.currentState
-                                                .fields['treetype'].currentState
+                                            _fbKey
+                                                .currentState.fields['treetype']
                                                 .didChange(
                                                     TreeTypeList.getById(1)
                                                         .name);
@@ -853,8 +846,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                 color: countreeTheme.shade800)),
                                         onPressed: () {
                                           setState(() {
-                                            _fbKey.currentState
-                                                .fields['treetype'].currentState
+                                            _fbKey
+                                                .currentState.fields['treetype']
                                                 .didChange(
                                                     TreeTypeList.getById(17)
                                                         .name);
@@ -872,7 +865,7 @@ class TreeformPageState extends State<TreeformPage> {
                                     ],
                                   ),
                                   FormBuilderDropdown(
-                                    attribute: "treetype",
+                                    name: "treetype",
                                     initialValue: TreeTypeList.types[0].name,
                                     items: TreeTypeList.getNames()
                                         .map((ttype) => DropdownMenuItem(
@@ -1012,8 +1005,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                 ))))
                                   ]),
                                   FormBuilderSwitch(
-                                    attribute: "isalive",
-                                    label: Text("Сухое дерево ",
+                                    name: "isalive",
+                                    title: Text("Сухое дерево ",
                                         style: TextStyle(
                                             color: Colors.black87,
                                             fontSize: 16)),
@@ -1117,8 +1110,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                       ))))
                                         ]),
                                         FormBuilderSwitch(
-                                          attribute: "isseedling",
-                                          label: Text("Малое насаждение",
+                                          name: "isseedling",
+                                          title: Text("Малое насаждение",
                                               style: TextStyle(
                                                   color: Colors.black87,
                                                   fontSize: 16)),
@@ -1335,8 +1328,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                       ))))
                                         ]),
                                         FormBuilderSwitch(
-                                            attribute: "multibarrel",
-                                            label: Text("Многоствольное",
+                                            name: "multibarrel",
+                                            title: Text("Многоствольное",
                                                 style: TextStyle(
                                                     color: Colors.black87,
                                                     fontSize: 16))),
@@ -1447,7 +1440,7 @@ class TreeformPageState extends State<TreeformPage> {
                                                       ))))
                                         ]),
                                         FormBuilderChoiceChip(
-                                          attribute: "state",
+                                          name: "state",
                                           options: [
                                             FormBuilderFieldOption(
                                                 child: Text(
@@ -1557,7 +1550,7 @@ class TreeformPageState extends State<TreeformPage> {
                                                       ))))
                                         ]),
                                         FormBuilderChoiceChip(
-                                          attribute: "firstthread",
+                                          name: "firstthread",
                                           options: [
                                             FormBuilderFieldOption(
                                                 child: Container(
@@ -1684,8 +1677,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                         ],
                                                       ))))
                                         ]),
-                                        FormBuilderCheckboxList(
-                                          attribute: "condition",
+                                        FormBuilderCheckboxGroup(
+                                          name: "condition",
                                           initialValue: [],
                                           onChanged: (el) {
                                             if (visCustomCondition == false &&
@@ -1726,13 +1719,15 @@ class TreeformPageState extends State<TreeformPage> {
                                         Visibility(
                                           visible: visCustomCondition,
                                           child: FormBuilderTextField(
-                                            attribute: "custom_condition",
+                                            name: "custom_condition",
                                             decoration: InputDecoration(
                                                 labelText:
                                                     "Введите особености состояния"),
-                                            validators: [
-                                              FormBuilderValidators.max(200),
-                                            ],
+                                            validator:
+                                                FormBuilderValidators.compose([
+                                              FormBuilderValidators.max(
+                                                  context, 200)
+                                            ]),
                                           ),
                                         ),
                                       ])),
@@ -1831,7 +1826,7 @@ class TreeformPageState extends State<TreeformPage> {
                                                       ))))
                                         ]),
                                         FormBuilderChoiceChip(
-                                          attribute: "surroundings",
+                                          name: "surroundings",
                                           options: [
                                             FormBuilderFieldOption(
                                                 child: Text("Брусчатка"),
@@ -1942,8 +1937,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                         ],
                                                       ))))
                                         ]),
-                                        FormBuilderCheckboxList(
-                                          attribute: "neighbours",
+                                        FormBuilderCheckboxGroup(
+                                          name: "neighbours",
                                           initialValue: [],
                                           options: [
                                             FormBuilderFieldOption(
@@ -2057,7 +2052,7 @@ class TreeformPageState extends State<TreeformPage> {
                                                       ))))
                                         ]),
                                         FormBuilderChoiceChip(
-                                          attribute: "overall",
+                                          name: "overall",
                                           options: [
                                             FormBuilderFieldOption(
                                                 child: Container(
@@ -2113,7 +2108,7 @@ class TreeformPageState extends State<TreeformPage> {
                                               flex: 10,
                                               child: FormBuilderImagePicker(
                                                 //initialValue: ['https://24.countree.ru/assets/preview/88/75/887592c95b458d783e2f661723185e94.jpg'],
-                                                attribute: "treeimages",
+                                                name: "treeimages",
                                               ))
                                         ])
                                       ])),
@@ -2222,10 +2217,12 @@ class TreeformPageState extends State<TreeformPage> {
                                             ), 
                                             */
                                         FormBuilderSlider(
-                                          attribute: "height",
-                                          validators: [
-                                            FormBuilderValidators.min(1)
-                                          ],
+                                          name: "height",
+                                          validator:
+                                              FormBuilderValidators.compose([
+                                            FormBuilderValidators.min(
+                                                context, 1)
+                                          ]),
                                           min: 0,
                                           max: 30,
                                           initialValue: 1,

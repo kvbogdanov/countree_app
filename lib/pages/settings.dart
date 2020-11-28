@@ -208,7 +208,7 @@ class SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-            Text('ver: 1.0.4 build 23', style: TextStyle(fontSize: 12))
+            Text('ver: 1.0.5 build 24', style: TextStyle(fontSize: 12))
             /*
             Row(  
               mainAxisAlignment: MainAxisAlignment.center,                         

@@ -310,30 +310,65 @@ class HomePageState extends State<HomePage> {
     Dbtree.Tree localTree =
         await this._getTreeBySystemId(remoteTree['id_tree']);
 
-    final notsure = remoteTree['notsure'].split(";");
+    print(remoteTree);
+    //return localTree;
+
+    /*
+      {
+        id_tree: 25615, 
+        name: другой вид, 
+        lat: 56.003313000229, 
+        lon: 92.849908862446, 
+        created: 1596483345, 
+        id_user: 1, 
+        treetype: 35, 
+        custom_treetype: null, 
+        is_alive: 0, 
+        is_seedling: 0, 
+        multibarrel: 0, 
+        firstthread: 2, 
+        overall: 1, 
+        notsure: , 
+        pics: [https://24.countree.ru/assets/preview/fd/d8/fdd8ac5ef4056bc6cab1a3f32460253b.jpg], 
+        cutdown: null, 
+        state: null, 
+        diameter: 21.00, 
+        height: 7, 
+        surround: 2}
+    */
+
+    var notsure = [];
+
+    if (remoteTree['notsure'] != null)
+      notsure = remoteTree['notsure'].split(";");
+
+    print(notsure);
 
     if (localTree == null) {
       if (remoteTree['is_alive'] == 1) {
         localTree = Dbtree.Tree(
-          created: remoteTree['created'],
-          id_user: remoteTree['id_user'],
+          id_system: remoteTree['id_tree'],
+          created: int.parse(remoteTree['created']),
+          uploaded: int.parse(remoteTree['created']),
           id_treetype: remoteTree['treetype'],
           custom_treetype: remoteTree['custom_treetype'],
           notsure_treetype: notsure.contains('id_treetype') == true ? 1 : 0,
-          longitude: remoteTree['lon'],
-          latitude: remoteTree['lat'],
+          longitude: double.parse(remoteTree['lon']),
+          latitude: double.parse(remoteTree['lat']),
           is_alive: remoteTree['is_alive'],
           notsure_is_alive: notsure.contains('is_alive') == true ? 1 : 0,
         );
       } else if (remoteTree['isseedling'] == true) {
         localTree = Dbtree.Tree(
-          created: remoteTree['created'],
+          id_system: remoteTree['id_tree'],
+          created: int.parse(remoteTree['created']),
+          uploaded: int.parse(remoteTree['created']),
           id_user: remoteTree['id_user'],
           id_treetype: remoteTree['treetype'],
           custom_treetype: remoteTree['custom_treetype'],
           notsure_treetype: notsure.contains('id_treetype') == true ? 1 : 0,
-          longitude: remoteTree['lon'],
-          latitude: remoteTree['lat'],
+          longitude: double.parse(remoteTree['lon']),
+          latitude: double.parse(remoteTree['lat']),
           is_alive: remoteTree['is_alive'],
           notsure_is_alive: notsure.contains('is_alive') == true ? 1 : 0,
           is_seedling: remoteTree['is_seedling'],
@@ -342,23 +377,25 @@ class HomePageState extends State<HomePage> {
       } else {
         var imagePaths = List<String>();
         for (var ti in remoteTree['pics']) {
-          imagePaths.add(ti.path);
+          imagePaths.add(ti);
         }
 
         localTree = Dbtree.Tree(
-            created: remoteTree['created'],
+            id_system: remoteTree['id_tree'],
+            created: int.parse(remoteTree['created']),
+            uploaded: int.parse(remoteTree['created']),
             id_user: remoteTree['id_user'],
             id_treetype: remoteTree['treetype'],
             custom_treetype: remoteTree['custom_treetype'],
             notsure_treetype: notsure.contains('id_treetype') == true ? 1 : 0,
-            longitude: remoteTree['lon'],
-            latitude: remoteTree['lat'],
+            longitude: double.parse(remoteTree['lon']),
+            latitude: double.parse(remoteTree['lat']),
             is_alive: remoteTree['is_alive'],
             notsure_is_alive: notsure.contains('is_alive') == true ? 1 : 0,
             is_seedling: remoteTree['is_seedling'],
             notsure_is_seedling:
                 notsure.contains('is_seedling') == true ? 1 : 0,
-            diameter: int.parse(remoteTree['diameter']),
+            diameter: double.parse(remoteTree['diameter']).round(),
             notsure_diameter: notsure.contains('diameter') == true ? 1 : 0,
             multibarrel: remoteTree['multibarrel'],
             notsure_multibarrel:
@@ -370,22 +407,104 @@ class HomePageState extends State<HomePage> {
                 : remoteTree['firstthread'],
             notsure_firstthread:
                 notsure.contains('firstthread') == true ? 1 : 0,
-            ids_condition:
-                remoteTree['conditions'].map((i) => i.toString()).join(","),
+            ids_condition: remoteTree['conditions'] == null
+                ? ''
+                : remoteTree['conditions'].map((i) => i.toString()).join(","),
             custom_condition: remoteTree['custom_condition'],
             notsure_ids_condition:
                 notsure.contains('conditions') == true ? 1 : 0,
             id_surroundings: remoteTree['surround'],
             notsure_id_surroundings:
                 notsure.contains('surround') == true ? 1 : 0,
-            ids_neighbours:
-                remoteTree['neighbours'].map((i) => i.toString()).join(","),
+            ids_neighbours: remoteTree['neighbours'] == null
+                ? ''
+                : remoteTree['neighbours'].map((i) => i.toString()).join(","),
             notsure_ids_neighbours:
                 notsure.contains('neighbours') == true ? 1 : 0,
             id_overall:
                 remoteTree['overall'] == null ? 0 : remoteTree['overall'],
-            height: remoteTree['height'], //double.parse(treeInfo['height']),
+            height: remoteTree['height'].toDouble(),
             images: imagePaths.join(";")); //.save();
+
+      }
+    } else {
+      if (remoteTree['is_alive'] == 1) {
+        localTree.id_system = remoteTree['id_tree'];
+        localTree.id_treetype = remoteTree['treetype'];
+        localTree.custom_treetype = remoteTree['custom_treetype'];
+        localTree.notsure_treetype =
+            notsure.contains('id_treetype') == true ? 1 : 0;
+        localTree.longitude = double.parse(remoteTree['lon']);
+        localTree.latitude = double.parse(remoteTree['lat']);
+        localTree.is_alive = remoteTree['is_alive'];
+        localTree.notsure_is_alive =
+            notsure.contains('is_alive') == true ? 1 : 0;
+      } else if (remoteTree['isseedling'] == true) {
+        localTree.id_system = remoteTree['id_tree'];
+        localTree.id_treetype = remoteTree['treetype'];
+        localTree.custom_treetype = remoteTree['custom_treetype'];
+        localTree.notsure_treetype =
+            notsure.contains('id_treetype') == true ? 1 : 0;
+        localTree.longitude = double.parse(remoteTree['lon']);
+        localTree.latitude = double.parse(remoteTree['lat']);
+        localTree.is_alive = remoteTree['is_alive'];
+        localTree.notsure_is_alive =
+            notsure.contains('is_alive') == true ? 1 : 0;
+        localTree.is_seedling = remoteTree['is_seedling'];
+        localTree.notsure_is_seedling =
+            notsure.contains('is_seedling') == true ? 1 : 0;
+      } else {
+        var imagePaths = List<String>();
+        for (var ti in remoteTree['pics']) {
+          imagePaths.add(ti);
+        }
+
+        localTree.id_system = remoteTree['id_tree'];
+        localTree.id_treetype = remoteTree['treetype'];
+        localTree.custom_treetype = remoteTree['custom_treetype'];
+        localTree.notsure_treetype =
+            notsure.contains('id_treetype') == true ? 1 : 0;
+        localTree.longitude = double.parse(remoteTree['lon']);
+        localTree.latitude = double.parse(remoteTree['lat']);
+        localTree.is_alive = remoteTree['is_alive'];
+        localTree.notsure_is_alive =
+            notsure.contains('is_alive') == true ? 1 : 0;
+        localTree.is_seedling = remoteTree['is_seedling'];
+        localTree.notsure_is_seedling =
+            notsure.contains('is_seedling') == true ? 1 : 0;
+        localTree.is_seedling = remoteTree['is_seedling'];
+        localTree.notsure_is_seedling =
+            notsure.contains('is_seedling') == true ? 1 : 0;
+        localTree.diameter = double.parse(remoteTree['diameter']).round();
+        localTree.notsure_diameter =
+            notsure.contains('diameter') == true ? 1 : 0;
+        localTree.multibarrel = remoteTree['multibarrel'];
+        localTree.notsure_multibarrel =
+            notsure.contains('multibarrel') == true ? 1 : 0;
+        localTree.id_state = int.parse(remoteTree['state']);
+        localTree.notsure_id_state = notsure.contains('state') == true ? 1 : 0;
+        localTree.firstthread =
+            remoteTree['firstthread'] == null ? 0 : remoteTree['firstthread'];
+        localTree.notsure_firstthread =
+            notsure.contains('firstthread') == true ? 1 : 0;
+        localTree.ids_condition = remoteTree['conditions'] == null
+            ? ''
+            : remoteTree['conditions'].map((i) => i.toString()).join(",");
+        localTree.custom_condition = remoteTree['custom_condition'];
+        localTree.notsure_ids_condition =
+            notsure.contains('conditions') == true ? 1 : 0;
+        localTree.id_surroundings = remoteTree['surround'];
+        localTree.notsure_id_surroundings =
+            notsure.contains('surround') == true ? 1 : 0;
+        localTree.ids_neighbours = remoteTree['neighbours'] == null
+            ? ''
+            : remoteTree['neighbours'].map((i) => i.toString()).join(",");
+        localTree.notsure_ids_neighbours =
+            notsure.contains('neighbours') == true ? 1 : 0;
+        localTree.id_overall =
+            remoteTree['overall'] == null ? 0 : remoteTree['overall'];
+        localTree.height = remoteTree['height'].toDouble();
+        localTree.images = imagePaths.join(";");
       }
     }
 

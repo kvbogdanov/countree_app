@@ -21,6 +21,9 @@ import 'package:image/image.dart' as LocalImage;
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:flutter/services.dart';
 
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as Path;
+
 const MAXZOOM = 20.0;
 
 class TreeformPage extends StatefulWidget {
@@ -342,6 +345,8 @@ class TreeformPageState extends State<TreeformPage> {
     treeInfo['custom_treetype'] = _customtypeController.value.text;
     //var res = 0;
 
+    //print(treeInfo['multibarrel']);
+
     if (treeInfo['isalive'] == true) {
       var ctree = Dbtree.Tree(
         created: new DateTime.now().millisecondsSinceEpoch,
@@ -529,7 +534,18 @@ class TreeformPageState extends State<TreeformPage> {
     return true;
   }
 
-  _loadFormWithTree(Dbtree.Tree tree, {setpos: false, noimg: false}) {
+  _loadFormWithTree(Dbtree.Tree tree, {setpos: false, noimg: false}) async {
+    final imagePathList = tree.images.split(";");
+
+    List<File> imagesList = [];
+    for (var imgpath in imagePathList) {
+      if (imgpath.contains('://')) {
+        File tmpf = await _downloadFile(imgpath, Path.basename(imgpath));
+        imagesList.add(tmpf);
+      } else
+        imagesList.add(new File(imgpath));
+    }
+
     setState(() {
       if (setpos == true) {
         currentPoint = new LatLng(tree.latitude, tree.longitude);
@@ -541,8 +557,9 @@ class TreeformPageState extends State<TreeformPage> {
       _fbKey.currentState.fields['treetype'].currentState
           .didChange(TreeTypeList.getById(idTreetype).name);
       visCustomType = (TreeTypeList.getById(idTreetype).name == 'другой вид');
-      _customtypeController.value =
-          TextEditingValue(text: tree.custom_treetype);
+      if (tree.custom_treetype != null)
+        _customtypeController.value =
+            TextEditingValue(text: tree.custom_treetype);
       notSure['treetype'] = (tree.notsure_treetype == 1);
 
       // сухое дерево
@@ -596,6 +613,11 @@ class TreeformPageState extends State<TreeformPage> {
           .didChange(tree.id_surroundings);
       notSure['surroundings'] = (tree.notsure_id_surroundings == 1);
 
+      // многоствольное
+      _fbKey.currentState.fields['multibarrel'].currentState
+          .didChange(tree.multibarrel == 1);
+      notSure['multibarrel'] = (tree.notsure_multibarrel == 1);
+
       // окружение  дерева
       if (tree.ids_neighbours != null) {
         var neibList =
@@ -619,15 +641,21 @@ class TreeformPageState extends State<TreeformPage> {
 
       if (noimg == false && tree.is_alive == 0 && tree.is_seedling == 0) {
         // изображения
-        final imagePathList = tree.images.split(";");
-        List<File> imagesList = [];
-        for (var imgpath in imagePathList) {
-          imagesList.add(new File(imgpath));
-        }
+
         _fbKey.currentState.fields['treeimages'].currentState
             .didChange(imagesList);
       }
     });
+  }
+
+  Future<File> _downloadFile(String url, String filename) async {
+    http.Client _client = new http.Client();
+    var req = await _client.get(Uri.parse(url));
+    var bytes = req.bodyBytes;
+    String dir = (await getApplicationDocumentsDirectory()).path;
+    File file = new File('$dir/$filename');
+    await file.writeAsBytes(bytes);
+    return file;
   }
 
   @override
@@ -2248,7 +2276,7 @@ class TreeformPageState extends State<TreeformPage> {
                                 final remoteSaveRes =
                                     await Tree.sendToServer(localSaveRes);
                                 final resultMessage = remoteSaveRes == 0
-                                    ? 'Сохранить на сервере не удалось, информация сохранена локально.'
+                                    ? 'Сохранить на сервере не удалось, возможно, дерево с даннми координатами уже существует или часть информации заполена некорректно, информация сохранена локально.'
                                     : 'Информация о дереве сохранена';
 
                                 //saveTreeLocal().then((value) async {
@@ -2300,7 +2328,7 @@ class TreeformPageState extends State<TreeformPage> {
                                     title: new Text(
                                         'Произошла ошибка при сохранениии'),
                                     content: new Text(
-                                        'Не удалось сохранить информацию о дереве на устройстве'),
+                                        'Не удалось сохранить информацию о дереве на устройстве: недостаточно памяти или слишком большой объем изображений'),
                                     actions: <Widget>[
                                       new FlatButton(
                                           child: new Text('Понятно'),

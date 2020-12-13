@@ -5,6 +5,7 @@ import 'package:countree/pages/home.dart';
 import 'package:countree/pages/settings.dart';
 import 'package:countree/pages/mytrees.dart';
 import 'package:countree/pages/treeform.dart';
+import 'package:countree/pages/seedingform.dart';
 import 'package:countree/pages/login.dart';
 import 'package:countree/pages/logout.dart';
 import 'package:countree/pages/about.dart';
@@ -30,6 +31,7 @@ class CountreeApp extends StatelessWidget {
         TreeformPage.route: (context) => TreeformPage(),
         AboutPage.route: (context) => AboutPage(),
         ViewPage.route: (context) => ViewPage(),
+        SeedingformPage.route: (context) => SeedingformPage(),
       },
     );
   }

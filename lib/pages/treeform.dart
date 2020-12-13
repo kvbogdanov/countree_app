@@ -1006,6 +1006,7 @@ class TreeformPageState extends State<TreeformPage> {
                                   ]),
                                   FormBuilderSwitch(
                                     name: "isalive",
+                                    initialValue: false,
                                     title: Text("Сухое дерево ",
                                         style: TextStyle(
                                             color: Colors.black87,
@@ -1111,6 +1112,7 @@ class TreeformPageState extends State<TreeformPage> {
                                         ]),
                                         FormBuilderSwitch(
                                           name: "isseedling",
+                                          initialValue: false,
                                           title: Text("Малое насаждение",
                                               style: TextStyle(
                                                   color: Colors.black87,
@@ -1329,6 +1331,7 @@ class TreeformPageState extends State<TreeformPage> {
                                         ]),
                                         FormBuilderSwitch(
                                             name: "multibarrel",
+                                            initialValue: false,
                                             title: Text("Многоствольное",
                                                 style: TextStyle(
                                                     color: Colors.black87,

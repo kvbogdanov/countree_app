@@ -11,6 +11,7 @@ import 'package:countree/data/cities.dart';
 import 'package:countree/data/colors.dart';
 import 'package:countree/data/maps.dart';
 import 'package:countree/pages/treeform.dart';
+import 'package:countree/pages/seedingform.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -845,7 +846,7 @@ class HomePageState extends State<HomePage> {
                       child: Icon(Icons.new_releases),
                       backgroundColor: countreeTheme.shade600,
                       onTap: () {
-                        Navigator.pushNamed(context, TreeformPage.route);
+                        Navigator.pushNamed(context, SeedingformPage.route);
                       },
                       label: 'Добавить дерево при посадке',
                       labelStyle: TextStyle(

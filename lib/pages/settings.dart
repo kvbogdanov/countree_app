@@ -81,7 +81,7 @@ class SettingsPageState extends State<SettingsPage> {
     _getOnlymeState().then((result) {
       setState(() {
         onlymy = result;
-        _fbKey.currentState.fields['onlymy'].currentState.didChange(onlymy);
+        _fbKey.currentState.fields['onlymy'].didChange(onlymy);
       });
     });
 
@@ -91,8 +91,7 @@ class SettingsPageState extends State<SettingsPage> {
         if (result != '') {
           sourcesDefault = result;
           _activeMapName.value = sourcesDefault;
-          _fbKey.currentState.fields['mapsrc'].currentState
-              .didChange(sourcesDefault);
+          _fbKey.currentState.fields['mapsrc'].didChange(sourcesDefault);
         }
       });
     });

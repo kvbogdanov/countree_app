@@ -8,6 +8,8 @@ import 'package:countree/data/tree.dart';
 import 'package:countree/data/colors.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:multi_image_picker/multi_image_picker.dart';
 
 import 'package:location/location.dart';
 import 'package:latlong/latlong.dart';
@@ -49,6 +51,13 @@ class TreeformPageState extends State<TreeformPage> {
   bool visCustomCondition = false;
 
   int args;
+
+  List<Asset> images = <Asset>[];
+  List<File> imagesList = [];
+
+  String _error = 'No Error Dectected';
+
+  File _imageReciept;
 
   _getCurrentCity() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -95,8 +104,7 @@ class TreeformPageState extends State<TreeformPage> {
   }
 
   _getPrevTrees() async {
-    final localTrees =
-        await Dbtree.Tree().select().orderByDesc('created').toList();
+    final localTrees = await Dbtree.Tree().select().orderByDesc('created').toList();
 
     prevMarkers = <Marker>[];
     for (var tree in localTrees) {
@@ -125,9 +133,7 @@ class TreeformPageState extends State<TreeformPage> {
               _scaffoldKey.currentState.hideCurrentSnackBar();
               _scaffoldKey.currentState.showSnackBar(SnackBar(
                   content: Row(
-                children: <Widget>[
-                  Text(TreeTypeList.getById(tree.id_treetype).name)
-                ],
+                children: <Widget>[Text(TreeTypeList.getById(tree.id_treetype).name)],
               )));
             },
             child: Container(
@@ -209,9 +215,9 @@ class TreeformPageState extends State<TreeformPage> {
       }
 
       _permissionGranted = await location.hasPermission();
-      if (_permissionGranted == PermissionStatus.denied) {
+      if (_permissionGranted == PermissionStatus.DENIED) {
         _permissionGranted = await location.requestPermission();
-        if (_permissionGranted != PermissionStatus.granted) {
+        if (_permissionGranted != PermissionStatus.GRANTED) {
           return;
         }
       }
@@ -279,10 +285,132 @@ class TreeformPageState extends State<TreeformPage> {
         });
   }
 
+  void _showImageDialog(context, int index, {bool isAsset: true}) {
+    var preview;
+
+    if (isAsset)
+      preview = AssetThumb(
+        asset: images[index],
+        width: 900,
+        height: 900,
+      );
+    else
+      preview = Image.file(
+        imagesList[index],
+        fit: BoxFit.cover,
+        cacheHeight: 900,
+        cacheWidth: 900,
+      );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Изображение'),
+        content: preview,
+        actions: <Widget>[
+          new TextButton(
+              child: new Text('Отмена', style: TextStyle(fontSize: 20)),
+              onPressed: () async {
+                Navigator.of(context).pop(true);
+              }),
+          new TextButton(
+              child: new Text('Удалить', style: TextStyle(fontSize: 20, color: Colors.red)),
+              onPressed: () async {
+                setState(() {
+                  if (isAsset)
+                    images.removeAt(index);
+                  else
+                    imagesList.removeAt(index);
+                });
+                Navigator.of(context).pop(true);
+              }),
+        ],
+      ),
+    );
+  }
+
+  // для изображений
+  Widget buildGridView() {
+    return GridView.count(
+      crossAxisCount: 3,
+      children: List.generate(images.length + imagesList.length, (index) {
+        if (index < imagesList.length) {
+          return GestureDetector(
+              onTap: () {
+                _showImageDialog(context, index, isAsset: false);
+              },
+              child: Image.file(
+                imagesList[index],
+                fit: BoxFit.cover,
+                cacheHeight: 300,
+                cacheWidth: 300,
+                //colorBlendMode: BlendMode.darken,
+                //color: Colors.grey,
+              ));
+        } else {
+          Asset asset = images[index - imagesList.length];
+          return GestureDetector(
+              onTap: () {
+                _showImageDialog(context, index - imagesList.length);
+              },
+              child: AssetThumb(
+                asset: asset,
+                width: 300,
+                height: 300,
+              ));
+        }
+      }),
+    );
+  }
+
+  Future<void> loadAssets() async {
+    List<Asset> resultList = <Asset>[];
+    String error = 'No Error Detected';
+
+    try {
+      resultList = await MultiImagePicker.pickImages(
+        maxImages: 300,
+        enableCamera: true,
+        selectedAssets: images,
+        cupertinoOptions: CupertinoOptions(takePhotoIcon: "chat"),
+        materialOptions: MaterialOptions(
+          actionBarColor: "#abcdef",
+          actionBarTitle: "Violations app",
+          allViewTitle: "All Photos",
+          useDetailsView: false,
+          selectCircleStrokeColor: "#000000",
+        ),
+      );
+    } on Exception catch (e) {
+      error = e.toString();
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+
+    setState(() {
+      images = resultList;
+      _error = error;
+    });
+  }
+
+  Future getImage() async {
+    final pickedFile = await ImagePicker.pickImage(source: ImageSource.camera);
+
+    setState(() {
+      if (pickedFile != null) {
+        _imageReciept = File(pickedFile.path);
+      } else {
+        print('No image selected.');
+      }
+    });
+  }
+
   Future<Dbtree.Tree> _getTreeByTime(int timestamp) async {
     if (timestamp == null) return null;
-    final tree =
-        await Dbtree.Tree().select().where('created=$timestamp').toSingle();
+    final tree = await Dbtree.Tree().select().where('created=$timestamp').toSingle();
     return tree;
   }
 
@@ -291,19 +419,15 @@ class TreeformPageState extends State<TreeformPage> {
           context: context,
           builder: (context) => new AlertDialog(
             title: new Text('Завершить редактирование?'),
-            content: new Text(
-                'Информация в форме редактирования НЕ БУДЕТ сохранена'),
+            content: new Text('Информация в форме редактирования НЕ БУДЕТ сохранена'),
             actions: <Widget>[
-              new FlatButton(
-                  child: new Text('Остаться', style: TextStyle(fontSize: 20)),
-                  onPressed: () => Navigator.of(context).pop(false)),
+              new FlatButton(child: new Text('Остаться', style: TextStyle(fontSize: 20)), onPressed: () => Navigator.of(context).pop(false)),
               new FlatButton(
                 onPressed: () async {
                   await _rememberMapPosition();
                   Navigator.of(context).pop(true);
                 },
-                child: new Text('Выйти',
-                    style: TextStyle(fontSize: 20, color: Colors.red)),
+                child: new Text('Выйти', style: TextStyle(fontSize: 20, color: Colors.red)),
               ),
             ],
           ),
@@ -315,26 +439,20 @@ class TreeformPageState extends State<TreeformPage> {
     final treeInfo = _fbKey.currentState.value;
     var errors = List<String>();
 
-    if (treeInfo['isalive'] == true || treeInfo['isseedling'] == true)
-      return [];
+    if (treeInfo['isalive'] == true || treeInfo['isseedling'] == true) return [];
 
     // adHoc solution )
     treeInfo['diameter'] = _diamController.value.text;
     print(treeInfo['diameter']);
-    if (double.parse(treeInfo['diameter']) <= 0 && notSure['diameter'] == false)
-      errors.add("Обхват ствола должен быть больше нуля");
+    if (double.parse(treeInfo['diameter']) <= 0 && notSure['diameter'] == false) errors.add("Обхват ствола должен быть больше нуля");
 
-    if (treeInfo['state'] == null && notSure['state'] == false)
-      errors.add("Необходимо указать крону у дерева");
+    if (treeInfo['state'] == null && notSure['state'] == false) errors.add("Необходимо указать крону у дерева");
 
-    if (treeInfo['surroundings'] == null && notSure['surroundings'] == false)
-      errors.add("Необходимо указать условия роста");
+    if (treeInfo['surroundings'] == null && notSure['surroundings'] == false) errors.add("Необходимо указать условия роста");
 
-    if (treeInfo['treeimages'] == null || treeInfo['treeimages'].length == 0)
-      errors.add("Необходимо добавить хотя бы одно фото");
+    if (treeInfo['treeimages'] == null || treeInfo['treeimages'].length == 0) errors.add("Необходимо добавить хотя бы одно фото");
 
-    if (treeInfo['height'] == 0 && notSure['height'] == false)
-      errors.add("Высота дерева должна быть больше нуля");
+    if (treeInfo['height'] == 0 && notSure['height'] == false) errors.add("Высота дерева должна быть больше нуля");
 
     return errors;
   }
@@ -451,17 +569,14 @@ class TreeformPageState extends State<TreeformPage> {
           notsure_multibarrel: notSure['multibarrel'] == true ? 1 : 0,
           id_state: treeInfo['state'],
           notsure_id_state: notSure['state'] == true ? 1 : 0,
-          firstthread:
-              treeInfo['firstthread'] == null ? 0 : treeInfo['firstthread'],
+          firstthread: treeInfo['firstthread'] == null ? 0 : treeInfo['firstthread'],
           notsure_firstthread: notSure['firstthread'] == true ? 1 : 0,
-          ids_condition:
-              treeInfo['condition'].map((i) => i.toString()).join(","),
+          ids_condition: treeInfo['condition'].map((i) => i.toString()).join(","),
           custom_condition: treeInfo['custom_condition'],
           notsure_ids_condition: notSure['condition'] == true ? 1 : 0,
           id_surroundings: treeInfo['surroundings'],
           notsure_id_surroundings: notSure['surroundings'] == true ? 1 : 0,
-          ids_neighbours:
-              treeInfo['neighbours'].map((i) => i.toString()).join(","),
+          ids_neighbours: treeInfo['neighbours'].map((i) => i.toString()).join(","),
           notsure_ids_neighbours: notSure['neighbours'] == true ? 1 : 0,
           id_overall: treeInfo['overall'] == null ? 0 : treeInfo['overall'],
           height: treeInfo['height'], //double.parse(treeInfo['height']),
@@ -523,8 +638,7 @@ class TreeformPageState extends State<TreeformPage> {
   }
 
   Future<bool> _copyPervTree() async {
-    final lastTree =
-        await Dbtree.Tree().select().orderByDesc('created').toSingle();
+    final lastTree = await Dbtree.Tree().select().orderByDesc('created').toSingle();
 
     if (lastTree != null)
       _loadFormWithTree(lastTree, noimg: true);
@@ -554,12 +668,9 @@ class TreeformPageState extends State<TreeformPage> {
 
       // биологический вид
       final idTreetype = tree.id_treetype;
-      _fbKey.currentState.fields['treetype']
-          .didChange(TreeTypeList.getById(idTreetype).name);
+      _fbKey.currentState.fields['treetype'].didChange(TreeTypeList.getById(idTreetype).name);
       visCustomType = (TreeTypeList.getById(idTreetype).name == 'другой вид');
-      if (tree.custom_treetype != null)
-        _customtypeController.value =
-            TextEditingValue(text: tree.custom_treetype);
+      if (tree.custom_treetype != null) _customtypeController.value = TextEditingValue(text: tree.custom_treetype);
       notSure['treetype'] = (tree.notsure_treetype == 1);
 
       // сухое дерево
@@ -595,8 +706,7 @@ class TreeformPageState extends State<TreeformPage> {
 
       // состояние  дерева
       if (tree.ids_condition != null) {
-        var condList =
-            tree.ids_condition.split(','); //.map(int.parse).toList();
+        var condList = tree.ids_condition.split(','); //.map(int.parse).toList();
         if (condList.isEmpty != true) {
           final condListIds = tree.ids_condition.split(',').toList();
           _fbKey.currentState.fields['condition'].didChange(condListIds);
@@ -605,19 +715,16 @@ class TreeformPageState extends State<TreeformPage> {
       notSure['condition'] = (tree.notsure_ids_condition == 1);
 
       // условия роста
-      _fbKey.currentState.fields['surroundings']
-          .didChange(tree.id_surroundings);
+      _fbKey.currentState.fields['surroundings'].didChange(tree.id_surroundings);
       notSure['surroundings'] = (tree.notsure_id_surroundings == 1);
 
       // многоствольное
-      _fbKey.currentState.fields['multibarrel']
-          .didChange(tree.multibarrel == 1);
+      _fbKey.currentState.fields['multibarrel'].didChange(tree.multibarrel == 1);
       notSure['multibarrel'] = (tree.notsure_multibarrel == 1);
 
       // окружение  дерева
       if (tree.ids_neighbours != null) {
-        var neibList =
-            tree.ids_neighbours.split(','); //.map(int.parse).toList();
+        var neibList = tree.ids_neighbours.split(','); //.map(int.parse).toList();
         if (neibList.isEmpty != true) {
           final neibListIds = tree.ids_neighbours.split(',').toList();
           _fbKey.currentState.fields['neighbours'].didChange(neibListIds);
@@ -661,8 +768,7 @@ class TreeformPageState extends State<TreeformPage> {
         height: 50.0,
         point: latlng,
         builder: (ctx) => Container(
-          child: Icon(Icons.filter_tilt_shift,
-              color: Colors.red, size: 50), // FlutterLogo(),
+          child: Icon(Icons.filter_tilt_shift, color: Colors.red, size: 50), // FlutterLogo(),
         ),
       );
     }).toList();
@@ -670,8 +776,7 @@ class TreeformPageState extends State<TreeformPage> {
     if (mainLayers.length > 1) {
       mainLayers.removeLast();
 
-      if (prevMarkers.length > 0 && mainLayers.length > 1)
-        mainLayers.removeLast();
+      if (prevMarkers.length > 0 && mainLayers.length > 1) mainLayers.removeLast();
     }
     mainLayers.add(MarkerLayerOptions(markers: prevMarkers));
     mainLayers.add(MarkerLayerOptions(markers: markers));
@@ -681,8 +786,7 @@ class TreeformPageState extends State<TreeformPage> {
         child: Scaffold(
             key: _scaffoldKey,
             appBar: AppBar(title: Text('Countree')),
-            endDrawer: buildDrawer(context, TreeformPage.route,
-                signed: signed, cu: currentUser),
+            endDrawer: buildDrawer(context, TreeformPage.route, signed: signed, cu: currentUser),
             body: SingleChildScrollView(
                 child: Column(
               children: <Widget>[
@@ -691,8 +795,7 @@ class TreeformPageState extends State<TreeformPage> {
                     child: FlutterMap(
                       mapController: mapController,
                       options: MapOptions(
-                          center:
-                              currentCity.center, //LatLng(56.01115, 92.85290),
+                          center: currentCity.center, //LatLng(56.01115, 92.85290),
                           zoom: 18.0,
                           maxZoom: MAXZOOM,
                           onTap: (point) {
@@ -709,8 +812,7 @@ class TreeformPageState extends State<TreeformPage> {
                       layers: mainLayers,
                     )),
                 Padding(
-                  padding:
-                      EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 2),
+                  padding: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 2),
                   child: Row(
                     children: <Widget>[
                       Text(
@@ -726,8 +828,7 @@ class TreeformPageState extends State<TreeformPage> {
                             });
                           });
                         },
-                        child: Icon(Icons.gps_fixed,
-                            color: countreeTheme.shade400, size: 40),
+                        child: Icon(Icons.gps_fixed, color: countreeTheme.shade400, size: 40),
                       ),
                       //Text(' Lat: ${currentPoint==null?'0':currentPoint.latitude.toString()}')
                     ],
@@ -748,37 +849,24 @@ class TreeformPageState extends State<TreeformPage> {
                                         child: Container(
                                             color: countreeTheme.shade100,
                                             child: Padding(
-                                                padding: EdgeInsets.only(
-                                                    left: 10,
-                                                    right: 10,
-                                                    top: 2,
-                                                    bottom: 2),
+                                                padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                 child: Row(
                                                   //mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: <Widget>[
-                                                    Text('Биологический вид',
-                                                        style: TextStyle(
-                                                            fontSize: 20)),
+                                                    Text('Биологический вид', style: TextStyle(fontSize: 20)),
                                                     Spacer(),
                                                     Tooltip(
                                                         message: 'Не уверен',
                                                         child: SizedBox(
                                                             width: 28.0,
                                                             child: Checkbox(
-                                                                value: notSure[
-                                                                    'treetype'],
-                                                                activeColor:
-                                                                    Colors.red,
-                                                                onChanged:
-                                                                    (val) {
-                                                                  notSure['treetype'] =
-                                                                      val;
-                                                                  setState(
-                                                                      () {});
+                                                                value: notSure['treetype'],
+                                                                activeColor: Colors.red,
+                                                                onChanged: (val) {
+                                                                  notSure['treetype'] = val;
+                                                                  setState(() {});
                                                                 }))),
-                                                    Text('н/у',
-                                                        style: TextStyle(
-                                                            fontSize: 14)),
+                                                    Text('н/у', style: TextStyle(fontSize: 14)),
                                                   ],
                                                 ))))
                                   ]),
@@ -786,100 +874,61 @@ class TreeformPageState extends State<TreeformPage> {
                                   Row(
                                     children: <Widget>[
                                       RaisedButton(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(18.0),
-                                            side: BorderSide(
-                                                color: countreeTheme.shade800)),
+                                        shape:
+                                            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0), side: BorderSide(color: countreeTheme.shade800)),
                                         onPressed: () {
                                           setState(() {
-                                            _fbKey
-                                                .currentState.fields['treetype']
-                                                .didChange(
-                                                    TreeTypeList.getById(10)
-                                                        .name);
+                                            _fbKey.currentState.fields['treetype'].didChange(TreeTypeList.getById(10).name);
                                             visCustomType = false;
                                           });
                                         },
                                         color: countreeTheme.shade400,
                                         textColor: Colors.white,
-                                        child: Text(
-                                            TreeTypeList.getById(10)
-                                                .name
-                                                .toUpperCase(),
-                                            style: TextStyle(fontSize: 12)),
+                                        child: Text(TreeTypeList.getById(10).name.toUpperCase(), style: TextStyle(fontSize: 12)),
                                       ),
                                       SizedBox(width: 10),
                                       RaisedButton(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(18.0),
-                                            side: BorderSide(
-                                                color: countreeTheme.shade800)),
+                                        shape:
+                                            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0), side: BorderSide(color: countreeTheme.shade800)),
                                         onPressed: () {
                                           setState(() {
-                                            _fbKey
-                                                .currentState.fields['treetype']
-                                                .didChange(
-                                                    TreeTypeList.getById(1)
-                                                        .name);
+                                            _fbKey.currentState.fields['treetype'].didChange(TreeTypeList.getById(1).name);
                                             visCustomType = false;
                                           });
                                         },
                                         color: countreeTheme.shade400,
                                         textColor: Colors.white,
-                                        child: Text(
-                                            TreeTypeList.getById(1)
-                                                .name
-                                                .toUpperCase(),
-                                            style: TextStyle(fontSize: 12)),
+                                        child: Text(TreeTypeList.getById(1).name.toUpperCase(), style: TextStyle(fontSize: 12)),
                                       ),
                                     ],
                                   ),
                                   Row(
                                     children: <Widget>[
                                       RaisedButton(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(18.0),
-                                            side: BorderSide(
-                                                color: countreeTheme.shade800)),
+                                        shape:
+                                            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0), side: BorderSide(color: countreeTheme.shade800)),
                                         onPressed: () {
                                           setState(() {
-                                            _fbKey
-                                                .currentState.fields['treetype']
-                                                .didChange(
-                                                    TreeTypeList.getById(17)
-                                                        .name);
+                                            _fbKey.currentState.fields['treetype'].didChange(TreeTypeList.getById(17).name);
                                             visCustomType = false;
                                           });
                                         },
                                         color: countreeTheme.shade400,
                                         textColor: Colors.white,
-                                        child: Text(
-                                            TreeTypeList.getById(17)
-                                                .name
-                                                .toUpperCase(),
-                                            style: TextStyle(fontSize: 12)),
+                                        child: Text(TreeTypeList.getById(17).name.toUpperCase(), style: TextStyle(fontSize: 12)),
                                       ),
                                     ],
                                   ),
                                   FormBuilderDropdown(
                                     name: "treetype",
                                     initialValue: TreeTypeList.types[0].name,
-                                    items: TreeTypeList.getNames()
-                                        .map((ttype) => DropdownMenuItem(
-                                            value: ttype.toString(),
-                                            child: Text(ttype)))
-                                        .toList(),
+                                    items: TreeTypeList.getNames().map((ttype) => DropdownMenuItem(value: ttype.toString(), child: Text(ttype))).toList(),
                                     onChanged: (el) {
-                                      if (el == 'другой вид' &&
-                                          visCustomType == false)
+                                      if (el == 'другой вид' && visCustomType == false)
                                         setState(() {
                                           visCustomType = true;
                                         });
-                                      else if (el != 'другой вид' &&
-                                          visCustomType == true)
+                                      else if (el != 'другой вид' && visCustomType == true)
                                         setState(() {
                                           visCustomType = false;
                                         });
@@ -889,8 +938,7 @@ class TreeformPageState extends State<TreeformPage> {
                                     visible: visCustomType,
                                     child: TextFormField(
                                       controller: _customtypeController,
-                                      decoration: InputDecoration(
-                                          border: UnderlineInputBorder()),
+                                      decoration: InputDecoration(border: UnderlineInputBorder()),
                                     ),
                                     /*
                                     FormBuilderTextField(
@@ -928,32 +976,22 @@ class TreeformPageState extends State<TreeformPage> {
                                         child: Container(
                                             color: countreeTheme.shade100,
                                             child: Padding(
-                                                padding: EdgeInsets.only(
-                                                    left: 10,
-                                                    right: 10,
-                                                    top: 2,
-                                                    bottom: 2),
+                                                padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                 child: Row(
                                                   //mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: <Widget>[
-                                                    Text('Сухое дерево',
-                                                        style: TextStyle(
-                                                            fontSize: 20)),
+                                                    Text('Сухое дерево', style: TextStyle(fontSize: 20)),
                                                     GestureDetector(
                                                       onTap: () {
                                                         return showDialog<void>(
                                                           context: context,
-                                                          barrierDismissible:
-                                                              false, // user must tap button!
-                                                          builder: (BuildContext
-                                                              context) {
+                                                          barrierDismissible: false, // user must tap button!
+                                                          builder: (BuildContext context) {
                                                             return AlertDialog(
                                                               //title: Text('Внимание'),
-                                                              content:
-                                                                  SingleChildScrollView(
+                                                              content: SingleChildScrollView(
                                                                 child: ListBody(
-                                                                  children: <
-                                                                      Widget>[
+                                                                  children: <Widget>[
                                                                     Text(
                                                                         'Галочка устанавливается, если дерево в вегетационный период не имеет ни одного живого листа/хвои - когда есть уверенность, что дерево умерло и не вернется.'),
                                                                   ],
@@ -961,13 +999,9 @@ class TreeformPageState extends State<TreeformPage> {
                                                               ),
                                                               actions: <Widget>[
                                                                 FlatButton(
-                                                                  child: Text(
-                                                                      'Понятно'),
-                                                                  onPressed:
-                                                                      () {
-                                                                    Navigator.of(
-                                                                            context)
-                                                                        .pop();
+                                                                  child: Text('Понятно'),
+                                                                  onPressed: () {
+                                                                    Navigator.of(context).pop();
                                                                   },
                                                                 ),
                                                               ],
@@ -977,8 +1011,7 @@ class TreeformPageState extends State<TreeformPage> {
                                                       },
                                                       child: Icon(
                                                         Icons.help,
-                                                        color: countreeTheme
-                                                            .shade400,
+                                                        color: countreeTheme.shade400,
                                                       ),
                                                     ),
                                                     Spacer(),
@@ -987,30 +1020,20 @@ class TreeformPageState extends State<TreeformPage> {
                                                         child: SizedBox(
                                                             width: 28.0,
                                                             child: Checkbox(
-                                                                value: notSure[
-                                                                    'isalive'],
-                                                                activeColor:
-                                                                    Colors.red,
-                                                                onChanged:
-                                                                    (val) {
-                                                                  notSure['isalive'] =
-                                                                      val;
-                                                                  setState(
-                                                                      () {});
+                                                                value: notSure['isalive'],
+                                                                activeColor: Colors.red,
+                                                                onChanged: (val) {
+                                                                  notSure['isalive'] = val;
+                                                                  setState(() {});
                                                                 }))),
-                                                    Text('н/у',
-                                                        style: TextStyle(
-                                                            fontSize: 14)),
+                                                    Text('н/у', style: TextStyle(fontSize: 14)),
                                                   ],
                                                 ))))
                                   ]),
                                   FormBuilderSwitch(
                                     name: "isalive",
                                     initialValue: false,
-                                    title: Text("Сухое дерево ",
-                                        style: TextStyle(
-                                            color: Colors.black87,
-                                            fontSize: 16)),
+                                    title: Text("Сухое дерево ", style: TextStyle(color: Colors.black87, fontSize: 16)),
                                     onChanged: (value) {
                                       setState(() {
                                         visRegular = !value;
@@ -1029,51 +1052,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text(
-                                                              'Малое насаждение',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Малое насаждение', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Лиственное зеленое насаждение ниже 2 метров или хвойное зеленое насаждение ниже 1 метра.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1083,40 +1086,29 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['isseedling'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['isseedling'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['isseedling'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
                                         FormBuilderSwitch(
                                           name: "isseedling",
                                           initialValue: false,
-                                          title: Text("Малое насаждение",
-                                              style: TextStyle(
-                                                  color: Colors.black87,
-                                                  fontSize: 16)),
+                                          title: Text("Малое насаждение", style: TextStyle(color: Colors.black87, fontSize: 16)),
                                           onChanged: (value) {
                                             setState(() {
                                               visRegular = !value;
@@ -1135,51 +1127,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text(
-                                                              'Обхват ствола (см)',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Обхват ствола (см)', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Обхват самого толстого ствола дерева, измеренный на высоте 1.3 метра (на уровне груди взрослого человека). Измеряется при помощи портновского метра. В случае, если толщина стволов одинакова - измеряется тот ствол, который измерить удобнее. Если доступ к стволу затруднен, следует оставить поле пустым и нажать кнопку “не уверен“.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1189,30 +1161,22 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['diameter'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['diameter'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['diameter'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
@@ -1230,12 +1194,8 @@ class TreeformPageState extends State<TreeformPage> {
                                         TextFormField(
                                           controller: _diamController,
                                           keyboardType: TextInputType.number,
-                                          inputFormatters: <TextInputFormatter>[
-                                            WhitelistingTextInputFormatter
-                                                .digitsOnly
-                                          ],
-                                          decoration: InputDecoration(
-                                              border: UnderlineInputBorder()),
+                                          inputFormatters: <TextInputFormatter>[WhitelistingTextInputFormatter.digitsOnly],
+                                          decoration: InputDecoration(border: UnderlineInputBorder()),
                                         ),
                                       ])),
                                   // многоствольное
@@ -1249,50 +1209,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text('Многоствольное',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Многоствольное', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Признак указывается, если из земли выходят несколько стволов одного вида и между стволами у земли нельзя поместить ладонь в длину. Если ладонь поместить можно, то следует описывать такие насаждения как отдельные деревья. Если из земли выходит 1 ствол, и уже после ветвится - признак указывать не нужно - это 1 дерево.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1302,40 +1243,29 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['multibarrel'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['multibarrel'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['multibarrel'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
                                         FormBuilderSwitch(
                                             name: "multibarrel",
                                             initialValue: false,
-                                            title: Text("Многоствольное",
-                                                style: TextStyle(
-                                                    color: Colors.black87,
-                                                    fontSize: 16))),
+                                            title: Text("Многоствольное", style: TextStyle(color: Colors.black87, fontSize: 16))),
                                       ])),
                                   // крона у дерева
                                   Visibility(
@@ -1348,64 +1278,39 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text('Крона у дерева',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Крона у дерева', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
-                                                                          Text(
-                                                                              'Полноценная, естественная - дерево не подвергалось обрезке.'),
-                                                                          Image.network(
-                                                                              "https://24.countree.ru/img/type1.jpg"),
-                                                                          SizedBox(
-                                                                              height: 25),
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
+                                                                          Text('Полноценная, естественная - дерево не подвергалось обрезке.'),
+                                                                          Image.network("https://24.countree.ru/img/type1.jpg"),
+                                                                          SizedBox(height: 25),
                                                                           Text(
                                                                               'Искусственно сформированная - имеется 3-5 и более обрезанных ветвей или хотя бы 1 обрезанный ствол более 10 см в диаметре, при этом крона у дерева имеется и выглядит функционально.'),
-                                                                          Image.network(
-                                                                              "https://24.countree.ru/img/type2.jpg"),
-                                                                          SizedBox(
-                                                                              height: 25),
+                                                                          Image.network("https://24.countree.ru/img/type2.jpg"),
+                                                                          SizedBox(height: 25),
                                                                           Text(
                                                                               'Глубоко обрезанная - Имеется толстый ствол при небольшой высоте, крона представлена тонкими ветвями в возрасте 1-3 лет.'),
-                                                                          Image.network(
-                                                                              "https://24.countree.ru/img/type3.jpg"),
+                                                                          Image.network("https://24.countree.ru/img/type3.jpg"),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1415,48 +1320,31 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['state'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['state'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['state'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
                                         FormBuilderChoiceChip(
                                           name: "state",
                                           options: [
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Полноценная, естественная"),
-                                                value: 1),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Искусственно сформированная"),
-                                                value: 2),
-                                            FormBuilderFieldOption(
-                                                child:
-                                                    Text("Глубоко обрезанная"),
-                                                value: 3),
+                                            FormBuilderFieldOption(child: Text("Полноценная, естественная"), value: 1),
+                                            FormBuilderFieldOption(child: Text("Искусственно сформированная"), value: 2),
+                                            FormBuilderFieldOption(child: Text("Глубоко обрезанная"), value: 3),
                                           ],
                                         ),
                                       ])),
@@ -1471,51 +1359,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text(
-                                                              'Крона начинается на высоте',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      16)),
+                                                          Text('Крона начинается на высоте', style: TextStyle(fontSize: 16)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Высота от земли до нижней ветви дерева, точного измерения не требуется - достаточно сравнения с собственным ростом.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1525,30 +1393,22 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['firstthread'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['firstthread'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['firstthread'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
@@ -1556,35 +1416,15 @@ class TreeformPageState extends State<TreeformPage> {
                                           name: "firstthread",
                                           options: [
                                             FormBuilderFieldOption(
-                                                child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("0 м")),
-                                                value: 0),
+                                                child: Container(margin: EdgeInsets.only(left: 10, right: 10), child: Text("0 м")), value: 0),
                                             FormBuilderFieldOption(
-                                                child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("1 м")),
-                                                value: 1),
+                                                child: Container(margin: EdgeInsets.only(left: 10, right: 10), child: Text("1 м")), value: 1),
                                             FormBuilderFieldOption(
-                                                child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("2 м")),
-                                                value: 2),
+                                                child: Container(margin: EdgeInsets.only(left: 10, right: 10), child: Text("2 м")), value: 2),
                                             FormBuilderFieldOption(
-                                                child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("3 м")),
-                                                value: 3),
+                                                child: Container(margin: EdgeInsets.only(left: 10, right: 10), child: Text("3 м")), value: 3),
                                             FormBuilderFieldOption(
-                                                child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("5 м")),
-                                                value: 5),
+                                                child: Container(margin: EdgeInsets.only(left: 10, right: 10), child: Text("5 м")), value: 5),
                                           ],
                                         ),
                                       ])),
@@ -1599,51 +1439,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text(
-                                                              'Состояние дерева',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Состояние дерева', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Наросты, грибы и другие образования на стволе - ставится даже при единичном плодовом теле гриба или наросте. Кора на стволе облазит или повреждена - ставится при размере повреждения площадью превышающем ладонь (если повреждений несколько, то их суммарная площадь превышает ладонь). Ветви сухие или сломанные и Листья/хвоя потемневшие, с пятнами - устанавливается если повреждения затронули 25% кроны и более. Дефекты, для которых в данном пункте установлена галочка, стоит включить в прикрепляемые фото - либо сделать общий вид дерева, где будут видны указанные недостатки, либо сделать отдельные фото.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1653,30 +1473,22 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['condition'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['condition'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['condition'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
@@ -1684,53 +1496,29 @@ class TreeformPageState extends State<TreeformPage> {
                                           name: "condition",
                                           initialValue: [],
                                           onChanged: (el) {
-                                            if (visCustomCondition == false &&
-                                                el.contains("99"))
+                                            if (visCustomCondition == false && el.contains("99"))
                                               setState(() {
                                                 visCustomCondition = true;
                                               });
-                                            else if (visCustomCondition ==
-                                                    true &&
-                                                !el.contains("99"))
+                                            else if (visCustomCondition == true && !el.contains("99"))
                                               setState(() {
                                                 visCustomCondition = false;
                                               });
                                           },
                                           options: [
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Наросты, грибы и другие образования на стволе"),
-                                                value: "1"),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Кора на стволе облазит или повреждена"),
-                                                value: "2"),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Ветви сухие или сломанные"),
-                                                value: "3"),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Листья/хвоя потемневшие, с пятнами"),
-                                                value: "4"),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Иные особенности (напр., дупло, опасный наклон ствола)"),
-                                                value: "99"),
+                                            FormBuilderFieldOption(child: Text("Наросты, грибы и другие образования на стволе"), value: "1"),
+                                            FormBuilderFieldOption(child: Text("Кора на стволе облазит или повреждена"), value: "2"),
+                                            FormBuilderFieldOption(child: Text("Ветви сухие или сломанные"), value: "3"),
+                                            FormBuilderFieldOption(child: Text("Листья/хвоя потемневшие, с пятнами"), value: "4"),
+                                            FormBuilderFieldOption(child: Text("Иные особенности (напр., дупло, опасный наклон ствола)"), value: "99"),
                                           ],
                                         ),
                                         Visibility(
                                           visible: visCustomCondition,
                                           child: FormBuilderTextField(
                                             name: "custom_condition",
-                                            decoration: InputDecoration(
-                                                labelText:
-                                                    "Введите особености состояния"),
-                                            validator:
-                                                FormBuilderValidators.compose([
-                                              FormBuilderValidators.max(
-                                                  context, 200)
-                                            ]),
+                                            decoration: InputDecoration(labelText: "Введите особености состояния"),
+                                            validator: FormBuilderValidators.compose([FormBuilderValidators.max(context, 200)]),
                                           ),
                                         ),
                                       ])),
@@ -1746,50 +1534,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text('Условия роста',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Условия роста', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'В случае, если в 0,5 метров от ствола нет ничего кроме почвы и растительности, устанавливается значение “Только почва, газон”, в противном случае устанавливается одна из 3-х подходящих галочек. В случае наличия нескольких подходящих вариантов (есть и асфальт и брусчатка) - указывается преобладающий по занимаемой площади вариант.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1799,52 +1568,30 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: Checkbox(
-                                                                  value: notSure[
-                                                                      'surroundings'],
-                                                                  activeColor:
-                                                                      Colors
-                                                                          .red,
-                                                                  onChanged:
-                                                                      (val) {
-                                                                    notSure['surroundings'] =
-                                                                        val;
-                                                                    setState(
-                                                                        () {});
+                                                                  value: notSure['surroundings'],
+                                                                  activeColor: Colors.red,
+                                                                  onChanged: (val) {
+                                                                    notSure['surroundings'] = val;
+                                                                    setState(() {});
                                                                   })),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
                                         FormBuilderChoiceChip(
                                           name: "surroundings",
                                           options: [
-                                            FormBuilderFieldOption(
-                                                child: Text("Брусчатка"),
-                                                value: 1),
-                                            FormBuilderFieldOption(
-                                                child: Text("Асфальт"),
-                                                value: 2),
-                                            FormBuilderFieldOption(
-                                                child:
-                                                    Text("Только почва, газон"),
-                                                value: 4),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Другое (бетон, керамогранит, доски, пластик)"),
-                                                value: 3),
+                                            FormBuilderFieldOption(child: Text("Брусчатка"), value: 1),
+                                            FormBuilderFieldOption(child: Text("Асфальт"), value: 2),
+                                            FormBuilderFieldOption(child: Text("Только почва, газон"), value: 4),
+                                            FormBuilderFieldOption(child: Text("Другое (бетон, керамогранит, доски, пластик)"), value: 3),
                                           ],
                                         ),
                                       ])),
@@ -1859,51 +1606,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text(
-                                                              'Окружение дерева',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Окружение дерева', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Галочку “Провода над кроной дерева” - стоит указывать так же если провода В кроне или ПОД кроной дерева. В случае, если провода высоко над кроной дерева и дерево не способно дорасти до такой высоты, то галочку указывать не стоит. Объекты, для которых в данном пункте установлена галочка, стоит включить в прикрепляемые фото - либо сделать общий вид дерева, где будут видны указанные объекты, либо сделать отдельные фото.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -1913,30 +1640,22 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['neighbours'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['neighbours'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['neighbours'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
@@ -1944,22 +1663,12 @@ class TreeformPageState extends State<TreeformPage> {
                                           name: "neighbours",
                                           initialValue: [],
                                           options: [
+                                            FormBuilderFieldOption(child: Text("Здание в 5 метрах от ствола"), value: "1"),
                                             FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Здание в 5 метрах от ствола"),
-                                                value: "1"),
+                                                child: Text("Рекламная или другая конструкция, столб, павильон в 1 метре от кроны"), value: "2"),
+                                            FormBuilderFieldOption(child: Text("Провода над кроной дерева"), value: "3"),
                                             FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Рекламная или другая конструкция, столб, павильон в 1 метре от кроны"),
-                                                value: "2"),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Провода над кроной дерева"),
-                                                value: "3"),
-                                            FormBuilderFieldOption(
-                                                child: Text(
-                                                    "Искусственные объекты намотаны, привязаны, прибиты к стволу или кроне дерева"),
-                                                value: "4"),
+                                                child: Text("Искусственные объекты намотаны, привязаны, прибиты к стволу или кроне дерева"), value: "4"),
                                           ],
                                         ),
                                       ])),
@@ -1974,50 +1683,31 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text('Общая оценка',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Общая оценка', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Общая оценка дерева - показатель “здоровья” дерева. Хорошее - если дерево выглядит здоровым и не имеет никаких признаков болезней (повреждения коры, наросты, потемневшая листва, сухие ветви, грибы и тд), Удовлетворительное - у дерева есть проблемы, но не угрожающие его жизнеспособности. Неудовлетворительное - существенные повреждения дерева, возможна его гибель из-за повреждений.'),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -2027,30 +1717,22 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['overall'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['overall'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['overall'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
@@ -2058,25 +1740,12 @@ class TreeformPageState extends State<TreeformPage> {
                                           name: "overall",
                                           options: [
                                             FormBuilderFieldOption(
-                                                child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("хорошее")),
-                                                value: 1),
+                                                child: Container(margin: EdgeInsets.only(left: 10, right: 10), child: Text("хорошее")), value: 1),
+                                            FormBuilderFieldOption(
+                                                child: Container(margin: EdgeInsets.only(left: 10, right: 10), child: Text("удовл")), value: 2),
                                             FormBuilderFieldOption(
                                                 child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("удовл")),
-                                                value: 2),
-                                            FormBuilderFieldOption(
-                                                child: Container(
-                                                    margin: EdgeInsets.only(
-                                                        left: 10, right: 10),
-                                                    child: Text("неудовл",
-                                                        style: TextStyle(
-                                                            color:
-                                                                Colors.red))),
+                                                    margin: EdgeInsets.only(left: 10, right: 10), child: Text("неудовл", style: TextStyle(color: Colors.red))),
                                                 value: 3),
                                           ],
                                         ),
@@ -2092,28 +1761,47 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 15,
-                                                          bottom: 15),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 15, bottom: 15),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text('Фотографии',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Фотографии', style: TextStyle(fontSize: 20)),
                                                         ],
                                                       ))))
                                         ]),
+                                        SizedBox(
+                                          height: (((images.length + imagesList.length) / 3).ceil() * 120).toDouble(),
+                                          child: buildGridView(),
+                                        ),
+                                        SizedBox(height: 10),
+                                        ElevatedButton(
+                                          child: Text("Выбрать фотографии", style: TextStyle(fontSize: 16, color: Colors.white)),
+                                          onPressed: () async {
+                                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                                            await prefs.setBool('pickFoto', true);
+                                            setState(() {
+                                              //pickFoto = true;
+                                            });
+
+                                            loadAssets().then((value) {
+                                              setState(() async {
+                                                //pickFoto = false;
+                                                SharedPreferences prefs = await SharedPreferences.getInstance();
+                                                prefs.setBool('pickFoto', false);
+                                              });
+                                            });
+                                          },
+                                        ),
+                                        /*
                                         Row(children: <Widget>[
                                           Expanded(
-                                              flex: 10,
+                                            flex: 10,
+                                            
                                               child: FormBuilderImagePicker(
                                                 //initialValue: ['https://24.countree.ru/assets/preview/88/75/887592c95b458d783e2f661723185e94.jpg'],
                                                 name: "treeimages",
-                                              ))
-                                        ])
+                                              )
+                                          )
+                                        ])*/
                                       ])),
                                   // высота дерева
                                   Visibility(
@@ -2126,52 +1814,32 @@ class TreeformPageState extends State<TreeformPage> {
                                               child: Container(
                                                   color: countreeTheme.shade100,
                                                   child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 10,
-                                                          right: 10,
-                                                          top: 2,
-                                                          bottom: 2),
+                                                      padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text('Высота дерева',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      20)),
+                                                          Text('Высота дерева', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              return showDialog<
-                                                                  void>(
-                                                                context:
-                                                                    context,
-                                                                barrierDismissible:
-                                                                    false, // user must tap button!
-                                                                builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                              return showDialog<void>(
+                                                                context: context,
+                                                                barrierDismissible: false, // user must tap button!
+                                                                builder: (BuildContext context) {
                                                                   return AlertDialog(
                                                                     //title: Text('Внимание'),
-                                                                    content:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          ListBody(
-                                                                        children: <
-                                                                            Widget>[
+                                                                    content: SingleChildScrollView(
+                                                                      child: ListBody(
+                                                                        children: <Widget>[
                                                                           Text(
                                                                               'Высоту можно определить или по ориентирам (этаж здания - около 3 метров), или с помощью бумажного прямоугольного треугольника с углами 45 градусов. Для этого поднесите его к глазу так, чтобы катеты были горизонтально и вертикально, а Вы смотрели на гипотенузу. Наведите верхнюю вершину треугольника на вершину дерева и отмерьте расстояние до дерева из этой точке. Добавив Ваш рост, Вы получите примерную высоту дерева.\n'),
-                                                                          Image.network(
-                                                                              "https://24.countree.ru/img/tree-height.jpg"),
+                                                                          Image.network("https://24.countree.ru/img/tree-height.jpg"),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    actions: <
-                                                                        Widget>[
+                                                                    actions: <Widget>[
                                                                       FlatButton(
-                                                                        child: Text(
-                                                                            'Понятно'),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
+                                                                        child: Text('Понятно'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop();
                                                                         },
                                                                       ),
                                                                     ],
@@ -2181,30 +1849,22 @@ class TreeformPageState extends State<TreeformPage> {
                                                             },
                                                             child: Icon(
                                                               Icons.help,
-                                                              color:
-                                                                  countreeTheme
-                                                                      .shade400,
+                                                              color: countreeTheme.shade400,
                                                             ),
                                                           ),
                                                           Spacer(),
                                                           Tooltip(
-                                                              message:
-                                                                  'Не уверен',
+                                                              message: 'Не уверен',
                                                               child: SizedBox(
                                                                   width: 28.0,
                                                                   child: Checkbox(
                                                                       value: notSure['height'],
                                                                       activeColor: Colors.red,
                                                                       onChanged: (val) {
-                                                                        notSure['height'] =
-                                                                            val;
-                                                                        setState(
-                                                                            () {});
+                                                                        notSure['height'] = val;
+                                                                        setState(() {});
                                                                       }))),
-                                                          Text('н/у',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      14)),
+                                                          Text('н/у', style: TextStyle(fontSize: 14)),
                                                         ],
                                                       ))))
                                         ]),
@@ -2221,11 +1881,7 @@ class TreeformPageState extends State<TreeformPage> {
                                             */
                                         FormBuilderSlider(
                                           name: "height",
-                                          validator:
-                                              FormBuilderValidators.compose([
-                                            FormBuilderValidators.min(
-                                                context, 1)
-                                          ]),
+                                          validator: FormBuilderValidators.compose([FormBuilderValidators.min(context, 1)]),
                                           min: 0,
                                           max: 30,
                                           initialValue: 1,
@@ -2243,12 +1899,8 @@ class TreeformPageState extends State<TreeformPage> {
                       child: RaisedButton(
                         color: Colors.deepOrangeAccent,
                         child: args == null
-                            ? Text("Сохранить и отправить",
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.white))
-                            : Text("Сохранить изменения",
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.white)),
+                            ? Text("Сохранить и отправить", style: TextStyle(fontSize: 16, color: Colors.white))
+                            : Text("Сохранить изменения", style: TextStyle(fontSize: 16, color: Colors.white)),
                         onPressed: () async {
                           if (_fbKey.currentState.saveAndValidate()) {
                             //print(_fbKey.currentState.value);
@@ -2273,8 +1925,7 @@ class TreeformPageState extends State<TreeformPage> {
                               final localSaveRes = await saveTreeLocal();
 
                               if (localSaveRes != null) {
-                                final remoteSaveRes =
-                                    await Tree.sendToServer(localSaveRes);
+                                final remoteSaveRes = await Tree.sendToServer(localSaveRes);
                                 final resultMessage = remoteSaveRes == 0
                                     ? 'Сохранить на сервере не удалось, возможно, дерево с даннми координатами уже существует или часть информации заполена некорректно, информация сохранена локально.'
                                     : 'Информация о дереве сохранена';
@@ -2284,12 +1935,10 @@ class TreeformPageState extends State<TreeformPage> {
                                   context: context,
                                   builder: (context) => new AlertDialog(
                                     title: new Text(resultMessage),
-                                    content: new Text(
-                                        'Вы можете добавить ещё одно дерево или вернуться к карте'),
+                                    content: new Text('Вы можете добавить ещё одно дерево или вернуться к карте'),
                                     actions: <Widget>[
                                       new FlatButton(
-                                          child: new Text('На карту',
-                                              style: TextStyle(fontSize: 20)),
+                                          child: new Text('На карту', style: TextStyle(fontSize: 20)),
                                           onPressed: () async {
                                             await _rememberMapPosition();
                                             /*
@@ -2299,22 +1948,16 @@ class TreeformPageState extends State<TreeformPage> {
                                                   if(args!=null)
                                                     Navigator.of(context).pop(true);
                                                   */
-                                            Navigator.pushNamedAndRemoveUntil(
-                                                context, '/', (r) => false);
+                                            Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
                                           }),
                                       new FlatButton(
-                                          child: new Text('Ещё дерево',
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  color: Colors.red)),
+                                          child: new Text('Ещё дерево', style: TextStyle(fontSize: 20, color: Colors.red)),
                                           onPressed: () async {
                                             await _rememberMapPosition();
                                             Navigator.of(context).pop(true);
                                             Navigator.of(context).pop(true);
                                             Navigator.pushNamed(
-                                                context,
-                                                TreeformPage
-                                                    .route); //Navigator.pushNamedAndRemoveUntil(context, "treeform", (r) => false),
+                                                context, TreeformPage.route); //Navigator.pushNamedAndRemoveUntil(context, "treeform", (r) => false),
                                           }),
                                     ],
                                   ),
@@ -2325,8 +1968,7 @@ class TreeformPageState extends State<TreeformPage> {
                                 showDialog(
                                   context: context,
                                   builder: (context) => new AlertDialog(
-                                    title: new Text(
-                                        'Произошла ошибка при сохранениии'),
+                                    title: new Text('Произошла ошибка при сохранениии'),
                                     content: new Text(
                                         'Не удалось сохранить информацию о дереве на устройстве: недостаточно памяти или слишком большой объем изображений'),
                                     actions: <Widget>[
@@ -2374,12 +2016,10 @@ class TreeformPageState extends State<TreeformPage> {
                     context: context,
                     builder: (context) => new AlertDialog(
                       title: new Text('Скопировать предыдущее?'),
-                      content: new Text(
-                          'Информация в форме редактирования будет заменена на информацию о предыдущем дереве'),
+                      content: new Text('Информация в форме редактирования будет заменена на информацию о предыдущем дереве'),
                       actions: <Widget>[
                         new FlatButton(
-                          child: new Text('Отмена',
-                              style: TextStyle(fontSize: 20)),
+                          child: new Text('Отмена', style: TextStyle(fontSize: 20)),
                           onPressed: () => Navigator.of(context).pop(false),
                         ),
                         new FlatButton(
@@ -2389,9 +2029,7 @@ class TreeformPageState extends State<TreeformPage> {
                             //print(last.created);
                             Navigator.of(context).pop(false);
                           },
-                          child: new Text('Скопировать',
-                              style:
-                                  TextStyle(fontSize: 20, color: Colors.red)),
+                          child: new Text('Скопировать', style: TextStyle(fontSize: 20, color: Colors.red)),
                         ),
                       ],
                     ),

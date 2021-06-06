@@ -89,7 +89,8 @@ Drawer buildDrawer(BuildContext context, String currentRoute, {bool signed = fal
           selected: currentRoute == AboutPage.route,
           onTap: () {
             Navigator.pop(context);
-            Navigator.pushNamed(context, AboutPage.route);
+            //Navigator.pushNamed(context, AboutPage.route);
+            Navigator.pushReplacementNamed(context, AboutPage.route);
           },
         ),
         ListTile(

@@ -49,7 +49,7 @@ class AboutPageState extends State<AboutPage>{
     
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(title: Text('О проекте')),
+      appBar: AppBar(title: Text('О проекте'), automaticallyImplyLeading: true),
       endDrawer: buildDrawer(context, AboutPage.route, signed:signed, cu: currentUser),
       body: Padding(
         padding: EdgeInsets.all(15.0),

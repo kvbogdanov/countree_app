@@ -11,7 +11,7 @@ description: App for trees displaying and inventorising.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.0.5+24
+version: 1.1.0+26
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
@@ -45,11 +45,13 @@ dependencies:
   progress_dialog: ^1.2.4
   image_picker:
   multi_image_picker:
+  flutter_native_image: ^0.0.6 
   flutter_absolute_path:  
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
   flutter_chips_input: ^1.9.4
+
 
 #dependency_overrides:
 #  flutter_form_builder: ^5.0.0

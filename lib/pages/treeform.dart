@@ -10,6 +10,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
+import 'package:flutter_absolute_path/flutter_absolute_path.dart';
 
 import 'package:location/location.dart';
 import 'package:latlong/latlong.dart';
@@ -435,32 +436,32 @@ class TreeformPageState extends State<TreeformPage> {
         false;
   }
 
-  List<String> validateTree() {
-    final treeInfo = _fbKey.currentState.value;
-    var errors = List<String>();
-
+  List<String> validateTree({List<String> imagesList}) {
+    print("VALIDATE TREE");
+    var treeInfo = _fbKey.currentState.value;
+    List<String> errors = [];
     if (treeInfo['isalive'] == true || treeInfo['isseedling'] == true) return [];
 
     // adHoc solution )
-    treeInfo['diameter'] = _diamController.value.text;
-    print(treeInfo['diameter']);
-    if (double.parse(treeInfo['diameter']) <= 0 && notSure['diameter'] == false) errors.add("Обхват ствола должен быть больше нуля");
+    final treeInfo_diameter = _diamController.value.text;
+    print(treeInfo_diameter);
+    if (double.parse(treeInfo_diameter) <= 0 && notSure['diameter'] == false) errors.add("Обхват ствола должен быть больше нуля");
 
     if (treeInfo['state'] == null && notSure['state'] == false) errors.add("Необходимо указать крону у дерева");
 
     if (treeInfo['surroundings'] == null && notSure['surroundings'] == false) errors.add("Необходимо указать условия роста");
 
-    if (treeInfo['treeimages'] == null || treeInfo['treeimages'].length == 0) errors.add("Необходимо добавить хотя бы одно фото");
+    if (imagesList == null || imagesList.length == 0) errors.add("Необходимо добавить хотя бы одно фото");
 
     if (treeInfo['height'] == 0 && notSure['height'] == false) errors.add("Высота дерева должна быть больше нуля");
 
     return errors;
   }
 
-  Future<Dbtree.Tree> saveTreeLocal() async {
+  Future<Dbtree.Tree> saveTreeLocal({List<String> imagesList}) async {
     final treeInfo = _fbKey.currentState.value;
-    treeInfo['diameter'] = _diamController.value.text;
-    treeInfo['custom_treetype'] = _customtypeController.value.text;
+    final treeInfo_diameter = _diamController.value.text;
+    final treeInfo_custom_treetype = _customtypeController.value.text;
     //var res = 0;
 
     //print(treeInfo['multibarrel']);
@@ -470,7 +471,7 @@ class TreeformPageState extends State<TreeformPage> {
         created: new DateTime.now().millisecondsSinceEpoch,
         id_user: currentUser.id_system,
         id_treetype: TreeTypeList.getByName(treeInfo['treetype']).id,
-        custom_treetype: treeInfo['custom_treetype'],
+        custom_treetype: treeInfo_custom_treetype,
         notsure_treetype: notSure['treetype'] == true ? 1 : 0,
         longitude: currentPoint.longitude,
         latitude: currentPoint.latitude,
@@ -546,16 +547,30 @@ class TreeformPageState extends State<TreeformPage> {
       //var res = await ctree.save();
       //return res>0?ctree:null;
     } else {
-      var imagePaths = List<String>();
+      List<String> imagePaths = [];
+      /*
       for (var ti in treeInfo['treeimages']) {
         imagePaths.add(ti.path);
       }
+      */
+
+      await Future.forEach(imagesList, (element) async {
+        var path;
+        // если точка, то полагаем, что это - расширение -- это надо исправить, скорее всего
+        if (element.indexOf('.') == -1)
+          path = await FlutterAbsolutePath.getAbsolutePath(element);
+        else
+          path = element;
+
+        path = path.replaceAll('file://', '');
+        imagePaths.add(path);
+      });
 
       var ctree = Dbtree.Tree(
           created: new DateTime.now().millisecondsSinceEpoch,
           id_user: currentUser.id_system,
           id_treetype: TreeTypeList.getByName(treeInfo['treetype']).id,
-          custom_treetype: treeInfo['custom_treetype'],
+          custom_treetype: treeInfo_custom_treetype,
           notsure_treetype: notSure['treetype'] == true ? 1 : 0,
           longitude: currentPoint.longitude,
           latitude: currentPoint.latitude,
@@ -563,7 +578,7 @@ class TreeformPageState extends State<TreeformPage> {
           notsure_is_alive: notSure['isalive'] == true ? 1 : 0,
           is_seedling: treeInfo['isseedling'] == true ? 1 : 0,
           notsure_is_seedling: notSure['isseedling'] == true ? 1 : 0,
-          diameter: int.parse(treeInfo['diameter']),
+          diameter: int.parse(treeInfo_diameter),
           notsure_diameter: notSure['diameter'] == true ? 1 : 0,
           multibarrel: treeInfo['multibarrel'] == true ? 1 : 0,
           notsure_multibarrel: notSure['multibarrel'] == true ? 1 : 0,
@@ -1776,19 +1791,7 @@ class TreeformPageState extends State<TreeformPage> {
                                         ElevatedButton(
                                           child: Text("Выбрать фотографии", style: TextStyle(fontSize: 16, color: Colors.white)),
                                           onPressed: () async {
-                                            SharedPreferences prefs = await SharedPreferences.getInstance();
-                                            await prefs.setBool('pickFoto', true);
-                                            setState(() {
-                                              //pickFoto = true;
-                                            });
-
-                                            loadAssets().then((value) {
-                                              setState(() async {
-                                                //pickFoto = false;
-                                                SharedPreferences prefs = await SharedPreferences.getInstance();
-                                                prefs.setBool('pickFoto', false);
-                                              });
-                                            });
+                                            loadAssets();
                                           },
                                         ),
                                         /*
@@ -1903,8 +1906,11 @@ class TreeformPageState extends State<TreeformPage> {
                             : Text("Сохранить изменения", style: TextStyle(fontSize: 16, color: Colors.white)),
                         onPressed: () async {
                           if (_fbKey.currentState.saveAndValidate()) {
+                            // формируем общий список изображений
+                            final List<String> overallImagePaths = images.map((e) => e.identifier).toList() + imagesList.map((e) => e.path).toList();
+
                             //print(_fbKey.currentState.value);
-                            final errors = validateTree();
+                            final errors = validateTree(imagesList: overallImagePaths);
 
                             if (errors.length == 0) {
                               //await saveTreeLocal();
@@ -1922,7 +1928,7 @@ class TreeformPageState extends State<TreeformPage> {
                               pr.style(message: 'Отправка данных...');
                               await pr.show();
 
-                              final localSaveRes = await saveTreeLocal();
+                              final localSaveRes = await saveTreeLocal(imagesList: overallImagePaths);
 
                               if (localSaveRes != null) {
                                 final remoteSaveRes = await Tree.sendToServer(localSaveRes);

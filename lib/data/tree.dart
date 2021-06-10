@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:image/image.dart' as LocalImage;
 
+import 'package:flutter_native_image/flutter_native_image.dart';
+
 class TreeType {
   final int id;
   final String name;
@@ -158,8 +160,7 @@ class Tree {
 
   int saveDate;
 
-  static Future<int> sendToServer(Dbtree.Tree tree,
-      {uri = 'https://24.countree.ru'}) async {
+  static Future<int> sendToServer(Dbtree.Tree tree, {uri = 'https://24.countree.ru'}) async {
     final savePath = '/mobile/addtree';
     BaseOptions options = BaseOptions(
         baseUrl: uri,
@@ -175,8 +176,7 @@ class Tree {
 
     Dio dio = Dio(options);
 
-    List<String> filepaths =
-        (tree.images != null) ? tree.images.split(';') : [];
+    List<String> filepaths = (tree.images != null) ? tree.images.split(';') : [];
     List<MultipartFile> files = [];
     final directory = await getApplicationDocumentsDirectory();
     final localDocPath = directory.path;
@@ -185,16 +185,11 @@ class Tree {
       try {
         final curImage = new File(filepaths[i]);
         final fileExtension = filepaths[i].split(".").last;
-        LocalImage.Image imageOrig =
-            LocalImage.decodeImage(curImage.readAsBytesSync());
-        LocalImage.Image imageResized =
-            LocalImage.copyResize(imageOrig, width: 1290);
-        new File('$localDocPath/picresized$i.$fileExtension')
-          ..writeAsBytesSync(LocalImage.encodeJpg(imageResized));
+        LocalImage.Image imageOrig = LocalImage.decodeImage(curImage.readAsBytesSync());
+        LocalImage.Image imageResized = LocalImage.copyResize(imageOrig, width: 1290);
+        new File('$localDocPath/picresized$i.$fileExtension')..writeAsBytesSync(LocalImage.encodeJpg(imageResized));
 
-        files.add(await MultipartFile.fromFile(
-            '$localDocPath/picresized$i.$fileExtension',
-            filename: "picture$i.$fileExtension"));
+        files.add(await MultipartFile.fromFile('$localDocPath/picresized$i.$fileExtension', filename: "picture$i.$fileExtension"));
         //files.add(await MultipartFile.fromFile(filepaths[i], filename: "picture$i.$fileExtension"));
       } catch (e) {
         continue;
@@ -202,7 +197,31 @@ class Tree {
     }
 
     Map<String, dynamic> data = tree.toMap();
-    data['files'] = files;
+
+    print('DEBUG1');
+
+    if (tree.images.length > 0) {
+      List<String> filepaths = (tree.images != null) ? tree.images.split(';') : [];
+      List<MultipartFile> files = [];
+
+      await Future.forEach(filepaths, (filepath) async {
+        try {
+          ImageProperties properties = await FlutterNativeImage.getImageProperties(filepath);
+          File compressedFile = await FlutterNativeImage.compressImage(filepath,
+              quality: 80, targetWidth: 1290, targetHeight: (properties.height * 1290 / properties.width).round());
+          print(compressedFile.path);
+          files.add(await MultipartFile.fromFile(compressedFile.path));
+        } catch (e) {
+          debugPrint(e.toString());
+        }
+      });
+
+      data['files'] = files;
+    }
+
+    data.remove('images');
+
+    //data['files'] = files;
 
     FormData formData = new FormData.fromMap(data);
     debugPrint(formData.toString());

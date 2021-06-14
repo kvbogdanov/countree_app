@@ -198,8 +198,6 @@ class Tree {
 
     Map<String, dynamic> data = tree.toMap();
 
-    print('DEBUG1');
-
     if (tree.images.length > 0) {
       List<String> filepaths = (tree.images != null) ? tree.images.split(';') : [];
       List<MultipartFile> files = [];

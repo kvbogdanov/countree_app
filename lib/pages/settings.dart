@@ -104,24 +104,33 @@ class SettingsPageState extends State<SettingsPage> {
     return Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          title: Text('Настройки'),
-          actions: <Widget>[
-            new IconButton(
-              icon: new Icon(Icons.save_alt),
-              onPressed: () {
-                if (_fbKey.currentState.saveAndValidate()) {
-                  _setMapLayer(_fbKey.currentState.value['mapsrc']);
-                  _setOnlymeState(_fbKey.currentState.value['onlymy']);
-                  /*
+            title: Text('Настройки'),
+            actions: <Widget>[
+              new IconButton(
+                icon: new Icon(Icons.save_alt),
+                onPressed: () {
+                  if (_fbKey.currentState.saveAndValidate()) {
+                    _setMapLayer(_fbKey.currentState.value['mapsrc']);
+                    _setOnlymeState(_fbKey.currentState.value['onlymy']);
+                    /*
                   if (sourcesDefault == _fbKey.currentState.value['mapsrc'])
                     Navigator.of(context).pop();
                   else */
-                  Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
-                }
+                    Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
+                  }
+                },
+              ),
+            ],
+            leading: Builder(
+              builder: (BuildContext context) {
+                return IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                );
               },
-            ),
-          ],
-        ),
+            )),
         endDrawer: buildDrawer(context, SettingsPage.route, signed: signed),
         body: Padding(
           padding: EdgeInsets.all(15.0),
@@ -131,8 +140,7 @@ class SettingsPageState extends State<SettingsPage> {
               child: Column(
                 children: <Widget>[
                   ValueListenableBuilder(
-                      builder:
-                          (BuildContext context, String value, Widget child) {
+                      builder: (BuildContext context, String value, Widget child) {
                         return FormBuilderDropdown(
                             name: "mapsrc",
                             decoration: InputDecoration(
@@ -146,8 +154,7 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                             initialValue: value,
                             hint: Text('Выберите источник тайлов'),
-                            validator: FormBuilderValidators.compose(
-                                [FormBuilderValidators.required(context)]),
+                            validator: FormBuilderValidators.compose([FormBuilderValidators.required(context)]),
                             items: sourcesMenuItems);
                       },
                       valueListenable: _activeMapName),
@@ -158,9 +165,7 @@ class SettingsPageState extends State<SettingsPage> {
                         name: "onlymy",
                         initialValue: onlymy,
                         //decoration: InputDecoration(labelText: 'Age'),
-                        title: Text("Отображать на карте только мои деревья",
-                            style: TextStyle(
-                                color: Colors.black87, fontSize: 16))),
+                        title: Text("Отображать на карте только мои деревья", style: TextStyle(color: Colors.black87, fontSize: 16))),
                   ),
                   SizedBox(height: 15),
                   /*
@@ -209,7 +214,24 @@ class SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-            Text('ver: 1.0.5 build 24', style: TextStyle(fontSize: 12))
+            SizedBox(height: 15),
+            ElevatedButton(
+              onPressed: () async {
+                /*
+                final idUser = currentUser.id_system;                
+                var res = await DbModel.Violation().select().where('id_user=$idUser').update({'updated': 0});
+                print(res);
+                Violation.loadAllFromServer(currentUser);
+                */
+              },
+              style: ElevatedButton.styleFrom(
+                primary: countreeTheme.shade200,
+                enableFeedback: true,
+              ),
+              child: Text("Перезагрузить информацию с сервера"),
+            ),
+            SizedBox(height: 15),
+            Text('ver: 1.1.1 build 28', style: TextStyle(fontSize: 12))
             /*
             Row(  
               mainAxisAlignment: MainAxisAlignment.center,                         

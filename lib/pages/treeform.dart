@@ -420,7 +420,7 @@ class TreeformPageState extends State<TreeformPage> {
           context: context,
           builder: (context) => new AlertDialog(
             title: new Text('Завершить редактирование?'),
-            content: new Text('Информация в форме редактирования НЕ БУДЕТ сохранена'),
+            content: new Text('Внесённая информация в форме редактирования НЕ БУДЕТ сохранена'),
             actions: <Widget>[
               new FlatButton(child: new Text('Остаться', style: TextStyle(fontSize: 20)), onPressed: () => Navigator.of(context).pop(false)),
               new FlatButton(
@@ -664,16 +664,21 @@ class TreeformPageState extends State<TreeformPage> {
   }
 
   _loadFormWithTree(Dbtree.Tree tree, {setpos: false, noimg: false}) async {
-    final imagePathList = tree.images.split(";");
+    print(tree.toMap());
 
-    List<File> imagesList = [];
-    for (var imgpath in imagePathList) {
-      if (imgpath.contains('://')) {
-        File tmpf = await _downloadFile(imgpath, Path.basename(imgpath));
-        imagesList.add(tmpf);
-      } else
-        imagesList.add(new File(imgpath));
-    }
+    final imagePathList = (tree.images != null) ? tree.images.split(";") : [];
+
+    imagesList = [];
+    if (!noimg)
+      for (var imgpath in imagePathList) {
+        if (imgpath == null || imgpath == "null") continue;
+        if (imgpath.contains('://')) {
+          print(imgpath);
+          File tmpf = await _downloadFile(imgpath, Path.basename(imgpath));
+          imagesList.add(tmpf);
+        } else if (imgpath != null && imgpath.length > 1) imagesList.add(new File(imgpath));
+        //images.add();
+      }
 
     setState(() {
       if (setpos == true) {
@@ -754,12 +759,6 @@ class TreeformPageState extends State<TreeformPage> {
       // высота первой ветви
       _fbKey.currentState.fields['height'].didChange(tree.height);
       notSure['height'] = (tree.notsure_firstthread == 1);
-
-      if (noimg == false && tree.is_alive == 0 && tree.is_seedling == 0) {
-        // изображения
-
-        _fbKey.currentState.fields['treeimages'].didChange(imagesList);
-      }
     });
   }
 
@@ -800,8 +799,21 @@ class TreeformPageState extends State<TreeformPage> {
         onWillPop: _onWillPop,
         child: Scaffold(
             key: _scaffoldKey,
-            appBar: AppBar(title: Text('Countree')),
-            endDrawer: buildDrawer(context, TreeformPage.route, signed: signed, cu: currentUser),
+            appBar: AppBar(
+              title: Text('Информация о посадке'),
+              /*
+                leading: Builder(
+                  builder: (BuildContext context) {
+                    return IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                )*/
+            ),
+            //endDrawer: buildDrawer(context, TreeformPage.route, signed: signed, cu: currentUser),
             body: SingleChildScrollView(
                 child: Column(
               children: <Widget>[

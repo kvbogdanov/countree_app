@@ -376,7 +376,7 @@ class TreeformPageState extends State<TreeformPage> {
         cupertinoOptions: CupertinoOptions(takePhotoIcon: "chat"),
         materialOptions: MaterialOptions(
           actionBarColor: "#abcdef",
-          actionBarTitle: "Violations app",
+          actionBarTitle: "Загрузка фото",
           allViewTitle: "All Photos",
           useDetailsView: false,
           selectCircleStrokeColor: "#000000",
@@ -463,8 +463,6 @@ class TreeformPageState extends State<TreeformPage> {
     final treeInfo_diameter = _diamController.value.text;
     final treeInfo_custom_treetype = _customtypeController.value.text;
     //var res = 0;
-
-    //print(treeInfo['multibarrel']);
 
     if (treeInfo['isalive'] == true) {
       var ctree = Dbtree.Tree(
@@ -565,6 +563,8 @@ class TreeformPageState extends State<TreeformPage> {
         path = path.replaceAll('file://', '');
         imagePaths.add(path);
       });
+
+      print(notSure['condition']); 
 
       var ctree = Dbtree.Tree(
           created: new DateTime.now().millisecondsSinceEpoch,
@@ -728,11 +728,11 @@ class TreeformPageState extends State<TreeformPage> {
       if (tree.ids_condition != null) {
         var condList = tree.ids_condition.split(','); //.map(int.parse).toList();
         if (condList.isEmpty != true) {
-          final condListIds = tree.ids_condition.split(',').toList();
+          final condListIds = tree.ids_condition.split(',').toList();          
           _fbKey.currentState.fields['condition'].didChange(condListIds);
         }
       }
-      notSure['condition'] = (tree.notsure_ids_condition == 1);
+      notSure['condition'] = (tree.notsure_ids_condition == 1);      
 
       // условия роста
       _fbKey.currentState.fields['surroundings'].didChange(tree.id_surroundings);
@@ -1690,12 +1690,12 @@ class TreeformPageState extends State<TreeformPage> {
                                           name: "neighbours",
                                           initialValue: [],
                                           options: [
-                                            FormBuilderFieldOption(child: Text("Здание в 5 метрах от ствола"), value: "1"),
+                                            FormBuilderFieldOption(child: Text("Здание в 5 метрах от ствола"), value: "3"),
                                             FormBuilderFieldOption(
-                                                child: Text("Рекламная или другая конструкция, столб, павильон в 1 метре от кроны"), value: "2"),
-                                            FormBuilderFieldOption(child: Text("Провода над кроной дерева"), value: "3"),
+                                                child: Text("Рекламная или другая конструкция, столб, павильон в 1 метре от кроны"), value: "4"),
+                                            FormBuilderFieldOption(child: Text("Провода над кроной дерева"), value: "5"),
                                             FormBuilderFieldOption(
-                                                child: Text("Искусственные объекты намотаны, привязаны, прибиты к стволу или кроне дерева"), value: "4"),
+                                                child: Text("Искусственные объекты намотаны, привязаны, прибиты к стволу или кроне дерева"), value: "6"),
                                           ],
                                         ),
                                       ])),
@@ -1918,6 +1918,7 @@ class TreeformPageState extends State<TreeformPage> {
                             : Text("Сохранить изменения", style: TextStyle(fontSize: 16, color: Colors.white)),
                         onPressed: () async {
                           if (_fbKey.currentState.saveAndValidate()) {
+                            //print(_fbKey.currentState.value);
                             // формируем общий список изображений
                             final List<String> overallImagePaths = images.map((e) => e.identifier).toList() + imagesList.map((e) => e.path).toList();
 

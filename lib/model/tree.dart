@@ -76,7 +76,7 @@ const countreeDbModel = SqfEntityModel(
     //formTables: [tableProduct, tableCategory, tableTodo],
     // put defined sequences into the sequences list.
     //sequences: [seqIdentity],
-    dbVersion: 2,
+    dbVersion: 3,
     bundledDatabasePath: null //         'assets/sample.db'
     // This value is optional. When bundledDatabasePath is empty then
     // EntityBase creats a new database when initializing the database

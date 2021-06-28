@@ -43,6 +43,7 @@ class TreeformPageState extends State<TreeformPage> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
   final _diamController = TextEditingController();
+  final _heightController = TextEditingController();
   final _customtypeController = TextEditingController();
 
   bool signed = false;
@@ -242,6 +243,7 @@ class TreeformPageState extends State<TreeformPage> {
   void initState() {
     super.initState();
     _diamController.value = TextEditingValue(text: '10');
+    _heightController.value = TextEditingValue(text: '0');
     _localPath().then((result) {
       localDocPath = result;
     });
@@ -444,7 +446,8 @@ class TreeformPageState extends State<TreeformPage> {
 
     // adHoc solution )
     final treeInfo_diameter = _diamController.value.text;
-    print(treeInfo_diameter);
+    final treeInfo_height = _heightController.value.text;
+    //print(treeInfo_diameter);
     if (double.parse(treeInfo_diameter) <= 0 && notSure['diameter'] == false) errors.add("Обхват ствола должен быть больше нуля");
 
     if (treeInfo['state'] == null && notSure['state'] == false) errors.add("Необходимо указать крону у дерева");
@@ -461,6 +464,7 @@ class TreeformPageState extends State<TreeformPage> {
   Future<Dbtree.Tree> saveTreeLocal({List<String> imagesList}) async {
     final treeInfo = _fbKey.currentState.value;
     final treeInfo_diameter = _diamController.value.text;
+    final treeInfo_height = _heightController.value.text;
     final treeInfo_custom_treetype = _customtypeController.value.text;
     //var res = 0;
 
@@ -564,7 +568,7 @@ class TreeformPageState extends State<TreeformPage> {
         imagePaths.add(path);
       });
 
-      print(notSure['condition']); 
+      print(notSure['condition']);
 
       var ctree = Dbtree.Tree(
           created: new DateTime.now().millisecondsSinceEpoch,
@@ -594,7 +598,8 @@ class TreeformPageState extends State<TreeformPage> {
           ids_neighbours: treeInfo['neighbours'].map((i) => i.toString()).join(","),
           notsure_ids_neighbours: notSure['neighbours'] == true ? 1 : 0,
           id_overall: treeInfo['overall'] == null ? 0 : treeInfo['overall'],
-          height: treeInfo['height'], //double.parse(treeInfo['height']),
+          //height: treeInfo['height'], //double.parse(treeInfo['height']),
+          height: double.parse(treeInfo_height),
           images: imagePaths.join(";")); //.save();
 
       if (args != null) {
@@ -728,11 +733,11 @@ class TreeformPageState extends State<TreeformPage> {
       if (tree.ids_condition != null) {
         var condList = tree.ids_condition.split(','); //.map(int.parse).toList();
         if (condList.isEmpty != true) {
-          final condListIds = tree.ids_condition.split(',').toList();          
+          final condListIds = tree.ids_condition.split(',').toList();
           _fbKey.currentState.fields['condition'].didChange(condListIds);
         }
       }
-      notSure['condition'] = (tree.notsure_ids_condition == 1);      
+      notSure['condition'] = (tree.notsure_ids_condition == 1);
 
       // условия роста
       _fbKey.currentState.fields['surroundings'].didChange(tree.id_surroundings);
@@ -756,8 +761,9 @@ class TreeformPageState extends State<TreeformPage> {
       _fbKey.currentState.fields['overall'].didChange(tree.id_overall);
       notSure['overall'] = (tree.notsure_id_overall == 1);
 
-      // высота первой ветви
-      _fbKey.currentState.fields['height'].didChange(tree.height);
+      // высота
+      //_fbKey.currentState.fields['height'].didChange(tree.height);
+      _heightController.value = TextEditingValue(text: tree.height.toString());
       notSure['height'] = (tree.notsure_firstthread == 1);
     });
   }
@@ -1883,6 +1889,12 @@ class TreeformPageState extends State<TreeformPage> {
                                                         ],
                                                       ))))
                                         ]),
+                                        TextFormField(
+                                          controller: _heightController,
+                                          keyboardType: TextInputType.number,
+                                          inputFormatters: <TextInputFormatter>[WhitelistingTextInputFormatter.digitsOnly],
+                                          decoration: InputDecoration(border: UnderlineInputBorder()),
+                                        ),
                                         /*
                                             FormBuilderTextField(
                                               attribute: "height",
@@ -1893,7 +1905,8 @@ class TreeformPageState extends State<TreeformPage> {
                                                 FormBuilderValidators.min(0),
                                               ],
                                             ), 
-                                            */
+                                        */
+                                        /*
                                         FormBuilderSlider(
                                           name: "height",
                                           validator: FormBuilderValidators.compose([FormBuilderValidators.min(context, 1)]),
@@ -1902,6 +1915,7 @@ class TreeformPageState extends State<TreeformPage> {
                                           initialValue: 1,
                                           divisions: 30,
                                         ),
+                                        */
                                       ])),
                                 ],
                               )))

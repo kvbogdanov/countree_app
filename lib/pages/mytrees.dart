@@ -30,9 +30,10 @@ class MytreesPageState extends State<MytreesPage> {
   List<Dbtree.Tree> localTrees;
 
   int totalItemsCount = 0;
+  int overallItemsCount = 0;
   bool _showOnlyRejected = false;
   bool _showDaterange = false;
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 365 * 2));
   DateTime _endDate = DateTime.now();
 
   _getLoggedState() async {
@@ -55,6 +56,9 @@ class MytreesPageState extends State<MytreesPage> {
           signed = false;
       });
     });
+
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text("Нажмите для редактирования, удерживайте для удаления."))));
   }
 
   Future<dynamic> _loadLocalTrees() async {
@@ -69,9 +73,12 @@ class MytreesPageState extends State<MytreesPage> {
     //if (_showOnlyRejected) condition += ' AND (status==$STATE_DECLINE)';
     condition += " AND created>$start AND created<=$end";
 
-    condition = " created>$start AND created<=$end";
+    //condition = " created>$start AND created<=$end";
+
     localTrees = await Dbtree.Tree().select().where(condition).orderByDesc('created').toList();
     totalItemsCount = (localTrees == null) ? 0 : localTrees.length;
+
+    overallItemsCount = await Dbtree.Tree().select().where('id_user=$idUserSystem').toCount();
 
     //localTrees = await Dbtree.Tree().select().orderByDesc('created').toList();
 
@@ -96,7 +103,7 @@ class MytreesPageState extends State<MytreesPage> {
   }
 
   Future<void> _pullRefresh() async {
-    //Tree.loadAllFromServer(currentUser);
+    Tree.loadAllFromServer(currentUser);
     return;
   }
 
@@ -173,7 +180,7 @@ class MytreesPageState extends State<MytreesPage> {
     return Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-            title: Text('Мои деревья'),
+            title: Text('Мои деревья (' + totalItemsCount.toString() + '/' + overallItemsCount.toString() + ')'),
             actions: <Widget>[
               new IconButton(
                 icon: new Icon(Icons.update),

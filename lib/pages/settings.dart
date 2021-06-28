@@ -7,6 +7,7 @@ import 'package:countree/data/maps.dart';
 import 'package:countree/data/colors.dart';
 
 import 'package:countree/model/user.dart';
+import 'package:countree/data/tree.dart';
 
 class SettingsPage extends StatefulWidget {
   static const String route = 'settings';
@@ -217,12 +218,10 @@ class SettingsPageState extends State<SettingsPage> {
             SizedBox(height: 15),
             ElevatedButton(
               onPressed: () async {
-                /*
-                final idUser = currentUser.id_system;                
-                var res = await DbModel.Violation().select().where('id_user=$idUser').update({'updated': 0});
-                print(res);
-                Violation.loadAllFromServer(currentUser);
-                */
+                final idUser = currentUser.id_system;
+                //var res = await DbModel.Violation().select().where('id_user=$idUser').update({'updated': 0});
+                //print(res);
+                Tree.loadAllFromServer(currentUser);
               },
               style: ElevatedButton.styleFrom(
                 primary: countreeTheme.shade200,
@@ -231,7 +230,7 @@ class SettingsPageState extends State<SettingsPage> {
               child: Text("Перезагрузить информацию с сервера"),
             ),
             SizedBox(height: 15),
-            Text('ver: 1.1.1 build 28', style: TextStyle(fontSize: 12))
+            Text('ver: 1.1.4 build 31', style: TextStyle(fontSize: 12))
             /*
             Row(  
               mainAxisAlignment: MainAxisAlignment.center,                         

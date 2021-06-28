@@ -201,7 +201,7 @@ class Tree {
 
     Map<String, dynamic> data = tree.toMap();
 
-    if (tree.images.length > 0) {
+    if (tree.images != null && tree.images.length > 0) {
       List<String> filepaths = (tree.images != null) ? tree.images.split(';') : [];
       List<MultipartFile> files = [];
 

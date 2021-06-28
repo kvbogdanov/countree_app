@@ -1151,7 +1151,7 @@ class TreeformPageState extends State<TreeformPage> {
                                       ])),
                                   // Обхват ствола
                                   Visibility(
-                                      visible: visRegular,
+                                      visible: (visRegular || visSeedling),
                                       child: Column(children: <Widget>[
                                         SizedBox(height: 25),
                                         Row(children: <Widget>[
@@ -1707,7 +1707,7 @@ class TreeformPageState extends State<TreeformPage> {
                                       ])),
                                   // интегральное состоение дерева (общая оценка)
                                   Visibility(
-                                      visible: visRegular,
+                                      visible: (visRegular || visSeedling),
                                       child: Column(children: <Widget>[
                                         SizedBox(height: 25),
                                         Row(children: <Widget>[

@@ -16,18 +16,18 @@ class LoginWithRestfulApi extends StatefulWidget {
 }
 
 class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
-  static var uri = "https://24.countree.ru";
+  static var uri = "https://29.countree.ru";
 
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return (prefs.getBool('logged') ?? false);
   }
-  
+
   _setLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('logged', true);
     setState(() {});
-    return true;    
+    return true;
   }
 
   Future<void> _showErrorDialog() async {
@@ -62,16 +62,13 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
   void initState() {
     super.initState();
 
-    
-    _getLoggedState().then((result){
-      if(result)
+    _getLoggedState().then((result) {
+      if (result)
         Timer.run(() {
           Navigator.of(context).pushNamed("/");
-        });      
+        });
     });
-
   }
-
 
   static BaseOptions options = BaseOptions(
       baseUrl: uri,
@@ -110,19 +107,16 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
         var responseJson = json.decode(response.data);
         return responseJson;
       } else if (response.statusCode == 401) {
-        _showErrorDialog(); 
+        _showErrorDialog();
         throw Exception("Incorrect Email/Password");
         //return null;
       } else
         throw Exception('Authentication Error');
     } on DioError catch (exception) {
-      if (exception == null ||
-          exception.toString().contains('SocketException')) {
+      if (exception == null || exception.toString().contains('SocketException')) {
         throw Exception("Network Error");
-      } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT ||
-          exception.type == DioErrorType.CONNECT_TIMEOUT) {
-        throw Exception(
-            "Could'nt connect, please ensure you have a stable network.");
+      } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT || exception.type == DioErrorType.CONNECT_TIMEOUT) {
+        throw Exception("Could'nt connect, please ensure you have a stable network.");
       } else {
         return null;
       }
@@ -136,24 +130,23 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
       appBar: AppBar(
         title: Text('Countree'),
         actions: <Widget>[
-           new IconButton(
-             icon: new Icon(Icons.save_alt),
+          new IconButton(
+            icon: new Icon(Icons.save_alt),
             onPressed: () async {
-                setState(() => _isLoading = true);
-                var res = await _loginUser(
-                    _emailController.text, _passwordController.text);
-                setState(() => _isLoading = false);
-                
-                JsonUser user = JsonUser.fromJson(jsonDecode(res));
+              setState(() => _isLoading = true);
+              var res = await _loginUser(_emailController.text, _passwordController.text);
+              setState(() => _isLoading = false);
 
-                if (user is JsonUser) {
-                  _setLoggedState();
-                  Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
-                }
-              },
-           ),
-         ],
-        //leading: new Container(),        
+              JsonUser user = JsonUser.fromJson(jsonDecode(res));
+
+              if (user is JsonUser) {
+                _setLoggedState();
+                Navigator.pushNamedAndRemoveUntil(context, "/", (r) => false);
+              }
+            },
+          ),
+        ],
+        //leading: new Container(),
       ),
       body: Center(
         child: _isLoading
@@ -215,9 +208,7 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text("Login Screen")),
       body: Center(
-        child: user != null
-            ? Text("Logged IN \n \n Email: ${user.email} ")
-            : Text("Yore not Logged IN"),
+        child: user != null ? Text("Logged IN \n \n Email: ${user.email} ") : Text("Yore not Logged IN"),
       ),
     );
   }

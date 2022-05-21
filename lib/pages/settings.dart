@@ -230,7 +230,7 @@ class SettingsPageState extends State<SettingsPage> {
               child: Text("Перезагрузить информацию с сервера"),
             ),
             SizedBox(height: 15),
-            Text('ver: 1.1.4 build 31', style: TextStyle(fontSize: 12))
+            Text('ver: 1.1.5 build 32', style: TextStyle(fontSize: 12))
             /*
             Row(  
               mainAxisAlignment: MainAxisAlignment.center,                         

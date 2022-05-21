@@ -41,6 +41,9 @@ class ViewPageState extends State<ViewPage> {
   var imagesWidgets = List<Widget>();
   var pics = List<String>();
 
+  String authorname = '';
+  String datecreate = '';
+
   _getLoggedState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return (prefs.getBool('logged') ?? false);
@@ -98,6 +101,9 @@ class ViewPageState extends State<ViewPage> {
           theight = responseJson['data']['height'] ?? 0;
           surround = responseJson['data']['surround'] ?? '-';
           state = responseJson['data']['state'] ?? '';
+
+          authorname = responseJson['data']['author'] ?? '';
+          datecreate = responseJson['data']['date_create'] ?? '';
 
           print("diam $diameter");
 
@@ -205,7 +211,18 @@ class ViewPageState extends State<ViewPage> {
                   child: Column(children: [
                     Row(
                       children: [
-                        (diameter > 0)
+                        Text('Добавил: $authorname', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text('$datecreate', style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal)),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        (diameter != null && diameter > 0)
                             ? Text('Диаметр (см): $diameter', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
                             : Text('Диаметр не указан', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ],
@@ -213,7 +230,7 @@ class ViewPageState extends State<ViewPage> {
                     SizedBox(height: 10),
                     Row(
                       children: <Widget>[
-                        (theight > 0)
+                        (theight != null && theight > 0)
                             ? Text('Высота (м): $theight', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
                             : Text('Высота не указана', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ],

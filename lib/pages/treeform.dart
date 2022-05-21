@@ -1838,7 +1838,7 @@ class TreeformPageState extends State<TreeformPage> {
                                                       padding: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
                                                       child: Row(
                                                         children: <Widget>[
-                                                          Text('Высота дерева', style: TextStyle(fontSize: 20)),
+                                                          Text('Высота дерева (м)', style: TextStyle(fontSize: 20)),
                                                           GestureDetector(
                                                             onTap: () {
                                                               return showDialog<void>(

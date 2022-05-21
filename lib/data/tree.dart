@@ -29,40 +29,43 @@ class TreeType {
 
 class TreeTypeList {
   static List<TreeType> types = [
-    TreeType(1, 'Барбарис амурский', true, false),
-    TreeType(3, 'Береза бородавчатая (повислая)', true, false),
-    TreeType(16, 'Боярышник кроваво-красный', true, false),
-    TreeType(17, 'Вишня войлочная', true, false),
-    TreeType(4, 'Вяз (род)', true, false),
-    TreeType(28, 'Ель колючая', false, false),
-    TreeType(29, 'Ель сибирская', false, false),
-    TreeType(18, 'Жимолость татарская', true, false),
-    TreeType(34, 'Ива (род)', true, false),
-    TreeType(19, 'Калина обыкновенная (Калина красная)', true, false),
-    TreeType(36, 'Карагана древовидная (акация желтая)', true, false),
-    TreeType(32, 'Каштан конский', true, false),
-    TreeType(20, 'Кизильник блестящий', true, false),
-    TreeType(5, 'Клён ясенелистный', true, false),
-    TreeType(6, 'Липа мелколистная', true, false),
-    TreeType(2, 'Лиственница сибирская', false, false),
-    TreeType(7, 'Орех маньчжурский', true, false),
-    TreeType(21, 'Пузыреплодник калинолистный', true, false),
-    TreeType(22, 'Роза  морщинистая', true, false),
-    TreeType(23, 'Роза  сизая', true, false),
-    TreeType(8, 'Рябина обыкновенная', true, false),
-    TreeType(24, 'Рябинник рябинолистный', true, false),
-    TreeType(25, 'Сирень венгерская', true, false),
-    TreeType(26, 'Сирень обыкновенная', true, false),
-    TreeType(27, 'Смородина золотистая', true, false),
-    TreeType(38, 'Сосна кедровая сибирская', false, false),
+    TreeType(1, 'Арония черноплодная (Черноплодная рябина)', true, false),
+    TreeType(2, 'Барбарис амурский', true, false),
+    TreeType(3, 'Береза (род)', true, false),
+    TreeType(4, 'Боярышник (род)', true, false),
+    TreeType(5, 'Бузина красная (обыкновенная)', true, false),
+    TreeType(6, 'Вяз (род)', true, false),
+    TreeType(7, 'Дёрен белый (Свидина белая)', true, false),
+    TreeType(8, 'Дуб черешчатый (обыкновенный)', true, false),
+    TreeType(9, 'Ель обыкновенная (европейская)', true, false),
+    TreeType(10, 'Ель колючая (голубая)', true, false),
+    TreeType(11, 'Жимолость татарская ', true, false),
+    TreeType(12, 'Ива (род)', true, false),
+    TreeType(13, 'Калина обыкновенная (красная)', true, false),
+    TreeType(14, 'Карагана древовидная (Жёлтая акация)', true, false),
+    TreeType(15, 'Кизильник блестящий', true, false),
+    TreeType(16, 'Клён (род)', true, false),
+    TreeType(17, 'Курильский чай кустарниковый (Лапчатка кустарниковая)', true, false),
+    TreeType(18, 'Липа мелколистная (сердцевидная)', true, false),
+    TreeType(19, 'Лиственница Архангельская (Сукачева)', false, false),
+    TreeType(20, 'Лох серебристый', true, false),
+    TreeType(21, 'Ольха серая (белая)', true, false),
+    TreeType(22, 'Пихта сибирская ', false, false),
+    TreeType(23, 'Пузыреплодник калинолистный ', true, false),
+    TreeType(24, 'Роза (шиповник) (род)', true, false),
+    TreeType(25, 'Рябина обыкновенная ', true, false),
+    TreeType(26, 'Сирень (род)', true, false),
+    TreeType(27, 'Смородина (род)', true, false),
+    TreeType(28, 'Снежноягодник белый (кистистый)', true, false),
+    TreeType(29, 'Сосна сибирская кедровая ', false, false),
     TreeType(30, 'Сосна обыкновенная', false, false),
-    TreeType(9, 'Тополь бальзамический', true, false),
-    TreeType(10, 'Тополь белый', true, false),
-    TreeType(11, 'Черемуха Маака', true, false),
-    TreeType(12, 'Черемуха Обыкновенная или кистевая', true, false),
-    TreeType(13, 'Яблоня Недзвецкого', true, false),
-    TreeType(14, 'Яблоня сибирская (ягодная)', true, false),
-    TreeType(15, 'Ясень обыкновенный', true, false),
+    TreeType(32, 'Спирея (род)', true, false),
+    TreeType(34, 'Тополь(род), кроме Тополя дрожащего', true, false),
+    TreeType(36, 'Тополь дрожащий (Осина)', true, false),
+    TreeType(38, 'Черёмуха обыкновенная (кистевая)', true, false),
+    TreeType(42, 'Чубушник обыкновенный (Садовый жасмин)', true, false),
+    TreeType(43, 'Яблоня ягодная (сибирская)', true, false),
+    TreeType(44, 'Ясень обыкновенный (высокий)', true, false),
     TreeType(35, 'другой вид', true, false),
   ];
 
@@ -163,7 +166,7 @@ class Tree {
 
   int saveDate;
 
-  static Future<int> sendToServer(Dbtree.Tree tree, {uri = 'https://24.countree.ru'}) async {
+  static Future<int> sendToServer(Dbtree.Tree tree, {uri = 'https://29.countree.ru'}) async {
     final savePath = '/mobile/addtree';
     BaseOptions options = BaseOptions(
         baseUrl: uri,
@@ -245,7 +248,7 @@ class Tree {
     return 0;
   }
 
-  static Future<dynamic> loadAllFromServer(User currentUser, {uri = 'https://24.countree.ru'}) async {
+  static Future<dynamic> loadAllFromServer(User currentUser, {uri = 'https://29.countree.ru'}) async {
     print('update trees from server');
     if (currentUser == null) {
       print('no user');

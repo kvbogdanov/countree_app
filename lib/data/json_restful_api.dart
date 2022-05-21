@@ -12,7 +12,7 @@ class LoginWithRestfulApi extends StatefulWidget {
 }
 
 class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
-  static var uri = "http://24.countree.ru";
+  static var uri = "http://29.countree.ru";
 
   static BaseOptions options = BaseOptions(
       baseUrl: uri,
@@ -42,8 +42,7 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
         contentType: 'application/json', //ContentType.parse('application/json')
       );
 
-      Response response = await dio.post('/mobile/login',
-          data: {"email": email, "password": password}, options: options);
+      Response response = await dio.post('/mobile/login', data: {"email": email, "password": password}, options: options);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         var responseJson = json.decode(response.data);
@@ -53,13 +52,10 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
       } else
         throw Exception('Authentication Error');
     } on DioError catch (exception) {
-      if (exception == null ||
-          exception.toString().contains('SocketException')) {
+      if (exception == null || exception.toString().contains('SocketException')) {
         throw Exception("Network Error");
-      } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT ||
-          exception.type == DioErrorType.CONNECT_TIMEOUT) {
-        throw Exception(
-            "Could'nt connect, please ensure you have a stable network.");
+      } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT || exception.type == DioErrorType.CONNECT_TIMEOUT) {
+        throw Exception("Could'nt connect, please ensure you have a stable network.");
       } else {
         return null;
       }
@@ -99,21 +95,18 @@ class _LoginWithRestfulApiState extends State<LoginWithRestfulApi> {
                     color: Colors.red,
                     onPressed: () async {
                       setState(() => _isLoading = true);
-                      var res = await _loginUser(
-                          _emailController.text, _passwordController.text);
+                      var res = await _loginUser(_emailController.text, _passwordController.text);
                       setState(() => _isLoading = false);
 
                       JsonUser user = JsonUser.fromJson(res);
                       if (user != null) {
-                        Navigator.of(context).push(MaterialPageRoute<Null>(
-                            builder: (BuildContext context) {
+                        Navigator.of(context).push(MaterialPageRoute<Null>(builder: (BuildContext context) {
                           return new LoginScreen(
                             user: user,
                           );
                         }));
                       } else {
-                        Scaffold.of(context).showSnackBar(
-                            SnackBar(content: Text("Wrong email or")));
+                        Scaffold.of(context).showSnackBar(SnackBar(content: Text("Wrong email or")));
                       }
                     },
                   ),
@@ -133,9 +126,7 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text("Login Screen")),
       body: Center(
-        child: user != null
-            ? Text("Logged IN \n \n Email: ${user.email} ")
-            : Text("Yore not Logged IN"),
+        child: user != null ? Text("Logged IN \n \n Email: ${user.email} ") : Text("Yore not Logged IN"),
       ),
     );
   }
